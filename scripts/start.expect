@@ -1,0 +1,18 @@
+#!/usr/bin/env expect -f
+spawn telnet 192.168.1.1
+expect -re .*#
+send "cd /data/video\n"
+expect -re .*#
+send "killall program.elf\n"
+expect -re .*#
+send "killall goardrone\n"
+expect -re .*#
+send "rm goardrone\n"
+expect -re .*#
+send "mv upload goardrone\n"
+expect -re .*#
+send "chmod +x goardrone\n"
+expect -re .*#
+send "./goardrone\r"
+set timeout -1
+expect -re .*#
