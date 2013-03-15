@@ -10,7 +10,8 @@ written in Go.
 * Kalman Filter
 * Motor Drivers
 * Stable Flight / Hover
-* AT protocol (compatibility with Free Flight App)
+* AT protocol (enough for compatibility with node-ardrone)
+* Video protocol (enough for compatibility with FreeFlight app)
 * Http protocol
 * Fun hacks
 
