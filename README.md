@@ -4,9 +4,13 @@ An open firmware for the [Parrot AR Drone
 2](http://en.wikipedia.org/wiki/Parrot_AR.Drone#AR.Drone_2.0_.282012.29)
 written in Go.
 
+## Status
+
+Feel free to poke around the code, but don't expect much to work yet.
+
 ## Roadmap
 
-* Navdata reader
+* Navdata reader (in progress)
 * Kalman Filter
 * Motor Drivers
 * Stable Flight / Hover
