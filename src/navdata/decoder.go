@@ -84,6 +84,9 @@ func (d *Decoder) Decode(data *Data) error {
 	return nil
 }
 
+
+// Data as found at https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
+// Possibly not correct.
 type Data struct {
 	Seq uint16
 
