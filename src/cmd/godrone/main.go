@@ -1,11 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"github.com/felixge/godrone/src/navdata"
+	"log"
 )
 
 func main() {
+	log.SetFlags(log.Ltime | log.Lmicroseconds)
+
 	driver, err := navdata.NewDriver(navdata.DefaultTTYPath)
 	if err != nil {
 		panic(err)
@@ -14,9 +16,13 @@ func main() {
 	var data navdata.Data
 	for {
 		if err := driver.Decode(&data); err != nil {
+			if err == navdata.ErrSync {
+				log.Println(err)
+				continue
+			}
 			panic(err)
 		}
 
-		fmt.Printf("%#v\n", data)
+		log.Printf("%#v\n", data)
 	}
 }
