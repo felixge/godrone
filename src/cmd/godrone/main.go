@@ -17,7 +17,7 @@ func main() {
 	for {
 		if err := driver.Decode(&data); err != nil {
 			if err == navdata.ErrSync {
-				log.Println(err)
+				log.Printf("%s\n", err)
 				continue
 			}
 			panic(err)
