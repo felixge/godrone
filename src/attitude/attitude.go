@@ -9,15 +9,25 @@ import (
 const oneG = float64(9.81)
 
 type Attitude struct {
+	// Input
 	navDriver *navdata.Driver
 	navData   navdata.Data
-	attData   Data
-	// The initial bias for the accelerometers
-	axBias    int
-	ayBias    int
-	azBias    int
+
+	// Output
+	attData Data
+
+	// Initial Accelerometer Bias
+	axBias int
+	ayBias int
+	azBias int
+
+	// Initial Gyroscope Bias
+	gxBias int
+	gyBias int
+	gzBias int
+
 	// The sensor output for 1G
-	aOneG     int
+	aOneG int
 }
 
 func NewAttitude() (*Attitude, error) {
@@ -34,7 +44,13 @@ func NewAttitude() (*Attitude, error) {
 
 func (a *Attitude) init() error {
 	count := 10
-	samples := struct{ X, Y, Z sort.IntSlice }{
+	samples := struct {
+		Ax, Ay, Az sort.IntSlice
+		Gx, Gy, Gz sort.IntSlice
+	}{
+		make(sort.IntSlice, count),
+		make(sort.IntSlice, count),
+		make(sort.IntSlice, count),
 		make(sort.IntSlice, count),
 		make(sort.IntSlice, count),
 		make(sort.IntSlice, count),
@@ -45,19 +61,28 @@ func (a *Attitude) init() error {
 			return err
 		}
 
-		samples.X[i] = int(a.navData.Ax)
-		samples.Y[i] = int(a.navData.Ay)
-		samples.Z[i] = int(a.navData.Az)
+		samples.Ax[i] = int(a.navData.Ax)
+		samples.Ay[i] = int(a.navData.Ay)
+		samples.Az[i] = int(a.navData.Az)
+		samples.Gx[i] = int(a.navData.Gx)
+		samples.Gy[i] = int(a.navData.Gy)
+		samples.Gz[i] = int(a.navData.Gz)
 	}
 
-	sort.Sort(samples.X)
-	sort.Sort(samples.Y)
-	sort.Sort(samples.Z)
+	sort.Sort(samples.Ax)
+	sort.Sort(samples.Ay)
+	sort.Sort(samples.Az)
+	sort.Sort(samples.Gx)
+	sort.Sort(samples.Gy)
+	sort.Sort(samples.Gz)
 
 	// Get the median
-	a.axBias = samples.X[count/2]
-	a.ayBias = samples.Y[count/2]
-	a.azBias = samples.Z[count/2]
+	a.axBias = samples.Ax[count/2]
+	a.ayBias = samples.Ay[count/2]
+	a.azBias = samples.Az[count/2]
+	a.gxBias = samples.Gx[count/2]
+	a.gyBias = samples.Gy[count/2]
+	a.gzBias = samples.Gz[count/2]
 
 	// The drone is supposed to be on a flat surface when this code runs, and all
 	// accelerometer seem to have the same output range. So the difference
@@ -78,6 +103,10 @@ func (a *Attitude) Update() (*Data, error) {
 	a.attData.Ay = (float64(a.navData.Ay) - float64(a.ayBias)) / float64(a.aOneG) * oneG
 	a.attData.Az = (float64(a.navData.Az) - float64(a.azBias)) / float64(a.aOneG) * oneG
 
+	a.attData.Gx = int(a.navData.Gx) - a.gxBias
+	a.attData.Gy = int(a.navData.Gy) - a.gyBias
+	a.attData.Gz = int(a.navData.Gz) - a.gzBias
+
 	return &a.attData, nil
 }
 
@@ -86,4 +115,9 @@ type Data struct {
 	Ax float64
 	Ay float64
 	Az float64
+
+	// Gyroscope data (unit unclear)
+	Gx int
+	Gy int
+	Gz int
 }

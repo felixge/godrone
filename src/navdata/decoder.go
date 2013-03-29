@@ -96,9 +96,9 @@ type Data struct {
 	Az uint16
 
 	// Gyroscopes
-	Gx              uint16
-	Gy              uint16
-	Gz              uint16
+	Gx              int16
+	Gy              int16
+	Gz              int16
 
 	// Everything below is unconfirmed, copied from other sources
 	TemperatureAcc  uint16
