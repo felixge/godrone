@@ -2,8 +2,8 @@
 set -eu
 
 root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-drone_ip="192.168.1.1"
 bin_name="${1:-godrone}"
+drone_ip="${2:-192.168.1.1}"
 
 echo "--> Compiling arm binary ..."
 env \
