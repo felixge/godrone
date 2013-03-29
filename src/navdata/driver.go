@@ -21,5 +21,10 @@ func NewDriver(ttyPath string) (*Driver, error) {
 		file: file,
 		Decoder: NewDecoder(file),
 	}
+	
+	if _, err := file.Write([]byte{3}); err != nil {
+		return nil, err
+	}
+
 	return driver, nil
 }
