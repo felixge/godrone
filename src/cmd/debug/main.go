@@ -4,6 +4,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"fmt"
 	"github.com/felixge/godrone/src/attitude"
+	"github.com/felixge/godrone/src/navdata"
 	"log"
 	"net/http"
 	"sync"
@@ -17,20 +18,33 @@ func main() {
 
 	go serveHttp()
 
-	log.Printf("Initializing attitude ...")
-	att, err := attitude.NewAttitude()
+	log.Printf("Initializing sensors ...")
+	driver, err := navdata.NewDriver(navdata.DefaultTTYPath)
+	if err != nil {
+		panic(err)
+	}
+
+	att, err := attitude.NewAttitude(driver)
 	if err != nil {
 		panic(err)
 	}
 
 	log.Printf("Starting main loop ...")
+
+	i := 0
 	for {
 		data, err := att.Update()
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Printf("%v\n", data)
+		i++
+		//fmt.Printf("%f | %f\n", data.Roll, data.Pitch)
+		if i % 10 == 0 {
+			fmt.Printf("0:%f\n", data.Roll)
+			fmt.Printf("1:%f\n", data.Pitch)
+		}
+		//fmt.Printf("%f | %f | %f\n", data.Ax, data.Ay, data.Az)
 	}
 }
 

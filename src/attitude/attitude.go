@@ -2,6 +2,7 @@ package attitude
 
 import (
 	"github.com/felixge/godrone/src/navdata"
+	"math"
 	"sort"
 )
 
@@ -30,12 +31,8 @@ type Attitude struct {
 	aOneG int
 }
 
-func NewAttitude() (*Attitude, error) {
-	driver, err := navdata.NewDriver(navdata.DefaultTTYPath)
-	if err != nil {
-		panic(err)
-	}
-	a := &Attitude{navDriver: driver}
+func NewAttitude(navDriver *navdata.Driver) (*Attitude, error) {
+	a := &Attitude{navDriver: navDriver}
 	if err := a.init(); err != nil {
 		return nil, err
 	}
@@ -107,6 +104,13 @@ func (a *Attitude) Update() (*Data, error) {
 	a.attData.Gy = int(a.navData.Gy) - a.gyBias
 	a.attData.Gz = int(a.navData.Gz) - a.gzBias
 
+	//a.attData.Roll += a.attData.Gx
+	//a.attData.Pitch += a.attData.Gy
+	//a.attData.Yaw += a.attData.Gz
+
+	a.attData.Pitch = math.Atan2(a.attData.Az, a.attData.Ax) * (180 / math.Pi) - 90
+	a.attData.Roll = math.Atan2(a.attData.Az, a.attData.Ay) * (180 / math.Pi) - 90
+
 	return &a.attData, nil
 }
 
@@ -120,4 +124,9 @@ type Data struct {
 	Gx int
 	Gy int
 	Gz int
+
+	// Results
+	Roll  float64
+	Pitch float64
+	Yaw   float64
 }
