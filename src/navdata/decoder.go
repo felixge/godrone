@@ -90,13 +90,17 @@ func (d *Decoder) Decode(data *Data) error {
 type Data struct {
 	Seq uint16
 
+	// Accelerometers
 	Ax uint16
 	Ay uint16
 	Az uint16
 
-	Vx              uint16
-	Vy              uint16
-	Vz              uint16
+	// Gyroscopes
+	Gx              uint16
+	Gy              uint16
+	Gz              uint16
+
+	// Everything below is unconfirmed, copied from other sources
 	TemperatureAcc  uint16
 	TemperatureGyro uint16
 
