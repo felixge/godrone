@@ -2,26 +2,31 @@ package motorboard
 
 import (
 	"os"
+	"sync"
+	"time"
 )
 
+const DefaultTTYPath = "/dev/ttyO0"
+
 type Driver struct {
-	file   *os.File
-	Speeds [4]int
-	leds   []LedColor
+	file        *os.File
+	Speeds      [4]int
+	leds        [4]LedColor
+	ledsChanged bool
+	mutex       sync.Mutex
 }
 
-func NewDriver() (*Driver, error) {
-	driver := &Driver{
-		leds: make([]LedColor, 4),
-	}
-	err := driver.Open("/dev/ttyO0")
+func NewDriver(ttyPath string) (*Driver, error) {
+	driver := &Driver{}
+	err := driver.open(ttyPath)
 	if err != nil {
 		return nil, err
 	}
+	go driver.loop()
 	return driver, nil
 }
 
-func (c *Driver) Open(path string) error {
+func (c *Driver) open(path string) error {
 	file, err := os.OpenFile(path, os.O_RDWR, 0)
 	if err != nil {
 		return err
@@ -30,8 +35,38 @@ func (c *Driver) Open(path string) error {
 	return nil
 }
 
-func (c *Driver) SetLed(motorId int, color LedColor) {
-	c.leds[motorId] = color
+func (c *Driver) loop() {
+	hz := 200
+	sleepTime := (1000 / time.Duration(hz)) * time.Millisecond
+
+	for {
+		c.mutex.Lock()
+		if c.ledsChanged {
+			c.updateLeds()
+			c.ledsChanged = false
+		}
+		c.mutex.Unlock()
+
+		time.Sleep(sleepTime)
+	}
+}
+
+func (c *Driver) SetLed(led int, color LedColor) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.leds[led] = color
+	c.ledsChanged = true
+}
+
+func (c *Driver) SetLeds(color LedColor) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	for i := 0; i < len(c.leds); i++ {
+		c.leds[i] = color
+	}
+	c.ledsChanged = true
 }
 
 type LedColor int
@@ -72,12 +107,12 @@ func (m *Driver) pwmCmd() []byte {
 	return cmd
 }
 
-func (m *Driver) UpdateSpeeds() error {
+func (m *Driver) updateSpeeds() error {
 	_, err := m.file.Write(m.pwmCmd())
 	return err
 }
 
-func (m *Driver) UpdateLeds() error {
+func (m *Driver) updateLeds() error {
 	_, err := m.file.Write(m.ledCmd())
 	return err
 }

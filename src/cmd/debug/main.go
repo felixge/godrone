@@ -4,46 +4,101 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"fmt"
 	"github.com/felixge/godrone/src/attitude"
+	"github.com/felixge/godrone/src/motorboard"
 	"github.com/felixge/godrone/src/navdata"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
 var clients []*websocket.Conn
 var clientsLock sync.Mutex
+var motorsLock sync.Mutex
+var motors *motorboard.Driver
+var speeds [4]int
 
 func main() {
 	log.SetFlags(log.Ltime | log.Lmicroseconds)
 
 	go serveHttp()
 
-	log.Printf("Initializing sensors ...")
-	driver, err := navdata.NewDriver(navdata.DefaultTTYPath)
+	log.Printf("Initializing motorboard ...")
+	motors, err := motorboard.NewDriver(motorboard.DefaultTTYPath)
+	if err != nil {
+		panic(err)
+	}
+	motors.SetLeds(motorboard.LedRed)
+
+	navDriver, err := navdata.NewDriver(navdata.DefaultTTYPath)
 	if err != nil {
 		panic(err)
 	}
 
-	att, err := attitude.NewAttitude(driver)
+	log.Printf("Initializing attitude ...")
+	att, err := attitude.NewAttitude(navDriver)
 	if err != nil {
 		panic(err)
 	}
 
 	log.Printf("Starting main loop ...")
+	motors.SetLeds(motorboard.LedGreen)
 
-	i := 0
+
 	for {
 		data, err := att.Update()
 		if err != nil {
 			panic(err)
 		}
 
-		i++
-		//fmt.Printf("%f | %f\n", data.Roll, data.Pitch)
-		if i % 10 == 0 {
-			fmt.Printf("0:%f\n", data.Roll)
-			fmt.Printf("1:%f\n", data.Pitch)
-		}
+		_ = data
+		motors.Speeds[0] = speeds[0]
+		motors.Speeds[1] = speeds[1]
+		motors.Speeds[2] = speeds[2]
+		motors.Speeds[3] = speeds[3]
+
+		//rollError := data.Roll / 90
+		//if rollError >= 0 {
+			//motors.Speeds[0] += int(rollError * float64(2048))
+			//motors.Speeds[3] += int(rollError * float64(2048))
+		//} else if rollError < 0 {
+			//motors.Speeds[1] += int(-rollError * float64(2048))
+			//motors.Speeds[2] += int(-rollError * float64(2048))
+		//}
+
+		//pitchError := data.Pitch / 90
+		//if pitchError >= 0 {
+			//motors.Speeds[0] += int(pitchError * float64(2048))
+			//motors.Speeds[1] += int(pitchError * float64(2048))
+		//} else if pitchError < 0 {
+			//motors.Speeds[2] += int(-pitchError * float64(2048))
+			//motors.Speeds[3] += int(-pitchError * float64(2048))
+		//}
+
+		//if motors.Speeds[0] > 511 {
+		//motors.Speeds[0] = 511
+		//}
+		//if motors.Speeds[1] > 511 {
+		//motors.Speeds[1] = 511
+		//}
+		//if motors.Speeds[2] > 511 {
+		//motors.Speeds[2] = 511
+		//}
+		//if motors.Speeds[3] > 511 {
+		//motors.Speeds[3] = 511
+		//}
+
+		//fmt.Printf("%f: %d, %d\n", data.Roll, motors.Speeds[0], motors.Speeds[1])
+
+		//_ = data
+		//motorsLock.Lock()
+		//if err := motors.UpdateSpeeds(); err != nil {
+			//panic(err)
+		//}
+		//motorsLock.Unlock()
+		//if err := motors.UpdateLeds(); err != nil {
+		//panic(err)
+		//}
 		//fmt.Printf("%f | %f | %f\n", data.Ax, data.Ay, data.Az)
 	}
 }
@@ -66,6 +121,15 @@ func handleWs(ws *websocket.Conn) {
 
 	var d string
 	for {
-		websocket.Message.Receive(ws, &d);
+		websocket.Message.Receive(ws, &d)
+		val, err := strconv.ParseInt(d, 10, 32)
+		if err != nil {
+			panic(err)
+		}
+
+		for i := 0; i < len(speeds); i++ {
+			speeds[i] = int(val)
+		}
+		fmt.Printf("received: %#v\n", d)
 	}
 }
