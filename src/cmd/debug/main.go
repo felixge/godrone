@@ -14,9 +14,7 @@ import (
 
 var clients []*websocket.Conn
 var clientsLock sync.Mutex
-var motorsLock sync.Mutex
 var motors *motorboard.Driver
-var speeds [4]int
 
 func main() {
 	log.SetFlags(log.Ltime | log.Lmicroseconds)
@@ -24,7 +22,8 @@ func main() {
 	go serveHttp()
 
 	log.Printf("Initializing motorboard ...")
-	motors, err := motorboard.NewDriver(motorboard.DefaultTTYPath)
+	var err error
+	motors, err = motorboard.NewDriver(motorboard.DefaultTTYPath)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +43,6 @@ func main() {
 	log.Printf("Starting main loop ...")
 	motors.SetLeds(motorboard.LedGreen)
 
-
 	for {
 		data, err := att.Update()
 		if err != nil {
@@ -52,10 +50,6 @@ func main() {
 		}
 
 		_ = data
-		motors.Speeds[0] = speeds[0]
-		motors.Speeds[1] = speeds[1]
-		motors.Speeds[2] = speeds[2]
-		motors.Speeds[3] = speeds[3]
 
 		//rollError := data.Roll / 90
 		//if rollError >= 0 {
@@ -127,9 +121,7 @@ func handleWs(ws *websocket.Conn) {
 			panic(err)
 		}
 
-		for i := 0; i < len(speeds); i++ {
-			speeds[i] = int(val)
-		}
+		motors.SetSpeeds(int(val))
 		fmt.Printf("received: %#v\n", d)
 	}
 }
