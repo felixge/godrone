@@ -108,8 +108,8 @@ func (a *Attitude) Update() (*Data, error) {
 	//a.attData.Pitch += a.attData.Gy
 	//a.attData.Yaw += a.attData.Gz
 
-	a.attData.Pitch = math.Atan2(a.attData.Az, a.attData.Ax) * (180 / math.Pi) - 90
-	a.attData.Roll = math.Atan2(a.attData.Az, a.attData.Ay) * (180 / math.Pi) - 90
+	a.attData.Pitch = math.Atan2(a.attData.Az, a.attData.Ax)*(180/math.Pi) - 90
+	a.attData.Roll = math.Atan2(a.attData.Az, a.attData.Ay)*(180/math.Pi) - 90
 
 	return &a.attData, nil
 }

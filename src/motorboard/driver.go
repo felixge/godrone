@@ -10,7 +10,7 @@ const DefaultTTYPath = "/dev/ttyO0"
 
 type Driver struct {
 	file        *os.File
-	Speeds      [4]int
+	speeds      [4]int
 	leds        [4]LedColor
 	ledsChanged bool
 	mutex       sync.Mutex
@@ -41,6 +41,7 @@ func (c *Driver) loop() {
 
 	for {
 		c.mutex.Lock()
+		c.updateSpeeds()
 		if c.ledsChanged {
 			c.updateLeds()
 			c.ledsChanged = false
@@ -67,6 +68,15 @@ func (c *Driver) SetLeds(color LedColor) {
 		c.leds[i] = color
 	}
 	c.ledsChanged = true
+}
+
+func (c *Driver) SetSpeeds(speed int) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	for i := 0; i < len(c.leds); i++ {
+		c.speeds[i] = speed
+	}
 }
 
 type LedColor int
@@ -99,11 +109,11 @@ func (m *Driver) ledCmd() []byte {
 // see: https://github.com/ardrone/ardrone/blob/master/ardrone/motorboard/motorboard.c
 func (m *Driver) pwmCmd() []byte {
 	cmd := make([]byte, 5)
-	cmd[0] = byte(0x20 | ((m.Speeds[0] & 0x1ff) >> 4))
-	cmd[1] = byte(((m.Speeds[0] & 0x1ff) << 4) | ((m.Speeds[1] & 0x1ff) >> 5))
-	cmd[2] = byte(((m.Speeds[1] & 0x1ff) << 3) | ((m.Speeds[2] & 0x1ff) >> 6))
-	cmd[3] = byte(((m.Speeds[2] & 0x1ff) << 2) | ((m.Speeds[3] & 0x1ff) >> 7))
-	cmd[4] = byte(((m.Speeds[3] & 0x1ff) << 1))
+	cmd[0] = byte(0x20 | ((m.speeds[0] & 0x1ff) >> 4))
+	cmd[1] = byte(((m.speeds[0] & 0x1ff) << 4) | ((m.speeds[1] & 0x1ff) >> 5))
+	cmd[2] = byte(((m.speeds[1] & 0x1ff) << 3) | ((m.speeds[2] & 0x1ff) >> 6))
+	cmd[3] = byte(((m.speeds[2] & 0x1ff) << 2) | ((m.speeds[3] & 0x1ff) >> 7))
+	cmd[4] = byte(((m.speeds[3] & 0x1ff) << 1))
 	return cmd
 }
 

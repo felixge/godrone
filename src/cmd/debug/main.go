@@ -53,20 +53,20 @@ func main() {
 
 		//rollError := data.Roll / 90
 		//if rollError >= 0 {
-			//motors.Speeds[0] += int(rollError * float64(2048))
-			//motors.Speeds[3] += int(rollError * float64(2048))
+		//motors.Speeds[0] += int(rollError * float64(2048))
+		//motors.Speeds[3] += int(rollError * float64(2048))
 		//} else if rollError < 0 {
-			//motors.Speeds[1] += int(-rollError * float64(2048))
-			//motors.Speeds[2] += int(-rollError * float64(2048))
+		//motors.Speeds[1] += int(-rollError * float64(2048))
+		//motors.Speeds[2] += int(-rollError * float64(2048))
 		//}
 
 		//pitchError := data.Pitch / 90
 		//if pitchError >= 0 {
-			//motors.Speeds[0] += int(pitchError * float64(2048))
-			//motors.Speeds[1] += int(pitchError * float64(2048))
+		//motors.Speeds[0] += int(pitchError * float64(2048))
+		//motors.Speeds[1] += int(pitchError * float64(2048))
 		//} else if pitchError < 0 {
-			//motors.Speeds[2] += int(-pitchError * float64(2048))
-			//motors.Speeds[3] += int(-pitchError * float64(2048))
+		//motors.Speeds[2] += int(-pitchError * float64(2048))
+		//motors.Speeds[3] += int(-pitchError * float64(2048))
 		//}
 
 		//if motors.Speeds[0] > 511 {
@@ -87,7 +87,7 @@ func main() {
 		//_ = data
 		//motorsLock.Lock()
 		//if err := motors.UpdateSpeeds(); err != nil {
-			//panic(err)
+		//panic(err)
 		//}
 		//motorsLock.Unlock()
 		//if err := motors.UpdateLeds(); err != nil {

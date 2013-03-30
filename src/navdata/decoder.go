@@ -84,7 +84,6 @@ func (d *Decoder) Decode(data *Data) error {
 	return nil
 }
 
-
 // Data as found at https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
 // Possibly not correct.
 type Data struct {
@@ -96,9 +95,9 @@ type Data struct {
 	Az uint16
 
 	// Gyroscopes
-	Gx              int16
-	Gy              int16
-	Gz              int16
+	Gx int16
+	Gy int16
+	Gz int16
 
 	// Everything below is unconfirmed, copied from other sources
 	TemperatureAcc  uint16

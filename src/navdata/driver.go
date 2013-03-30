@@ -6,7 +6,7 @@ import (
 
 const DefaultTTYPath = "/dev/ttyO1"
 
-type Driver struct{
+type Driver struct {
 	*Decoder
 	file *os.File
 }
@@ -18,10 +18,10 @@ func NewDriver(ttyPath string) (*Driver, error) {
 	}
 
 	driver := &Driver{
-		file: file,
+		file:    file,
 		Decoder: NewDecoder(file),
 	}
-	
+
 	if _, err := file.Write([]byte{3}); err != nil {
 		return nil, err
 	}
