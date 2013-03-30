@@ -40,7 +40,7 @@ func NewAttitude(navDriver *navdata.Driver) (*Attitude, error) {
 }
 
 func (a *Attitude) init() error {
-	count := 10
+	count := 100
 	samples := struct {
 		Ax, Ay, Az sort.IntSlice
 		Gx, Gy, Gz sort.IntSlice
