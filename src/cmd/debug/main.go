@@ -2,7 +2,6 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-	"fmt"
 	"github.com/felixge/godrone/src/attitude"
 	"github.com/felixge/godrone/src/motorboard"
 	"github.com/felixge/godrone/src/navdata"
@@ -49,8 +48,6 @@ func main() {
 			panic(err)
 		}
 
-		_ = data
-
 		//rollError := data.Roll / 90
 		//if rollError >= 0 {
 		//motors.Speeds[0] += int(rollError * float64(2048))
@@ -94,6 +91,18 @@ func main() {
 		//panic(err)
 		//}
 		//fmt.Printf("%f | %f | %f\n", data.Ax, data.Ay, data.Az)
+
+		activeClients := make([]*websocket.Conn, 0, len(clients))
+		clientsLock.Lock()
+		for _, client := range clients {
+			if err := websocket.JSON.Send(client, data); err != nil {
+				log.Printf("send err: %s", err)
+			} else {
+				activeClients = append(activeClients, client)
+			}
+		}
+		clients = activeClients
+		clientsLock.Unlock()
 	}
 }
 
@@ -115,13 +124,17 @@ func handleWs(ws *websocket.Conn) {
 
 	var d string
 	for {
-		websocket.Message.Receive(ws, &d)
+		if err := websocket.Message.Receive(ws, &d); err != nil {
+			log.Printf("receive err: %s", err)
+			break
+		}
+
 		val, err := strconv.ParseInt(d, 10, 32)
 		if err != nil {
 			panic(err)
 		}
 
 		motors.SetSpeeds(int(val))
-		fmt.Printf("received: %#v\n", d)
+		log.Printf("received: %#v\n", d)
 	}
 }
