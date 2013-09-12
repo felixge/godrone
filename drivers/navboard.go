@@ -1,30 +1,56 @@
-package navdata
+package drivers
 
 import (
 	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
+	"os"
 )
+
+const DefaultTTYPath = "/dev/ttyO1"
+
+type Navboard struct {
+	*NavdataDecoder
+	file *os.File
+}
+
+func NewNavboard(ttyPath string) (*Navboard, error) {
+	file, err := os.OpenFile(ttyPath, os.O_RDWR, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	driver := &Navboard{
+		file:    file,
+		NavdataDecoder: NewNavdataDecoder(file),
+	}
+
+	if _, err := file.Write([]byte{3}); err != nil {
+		return nil, err
+	}
+
+	return driver, nil
+}
 
 var ErrSync = errors.New("navdata: could not sync with stream")
 
 const dataSize = 60
 
-type Decoder struct {
+type NavdataDecoder struct {
 	r      io.Reader
 	offset int
 	buf    []byte
 }
 
-func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{r: r, buf: make([]byte, dataSize)}
+func NewNavdataDecoder(r io.Reader) *NavdataDecoder {
+	return &NavdataDecoder{r: r, buf: make([]byte, dataSize)}
 }
 
 // Raw returns a raw navdata payload. The returned buffer may be reused by
 // later Raw() calls. This is a low-level method, direct usage is not
 // recommended.
-func (d *Decoder) Raw() ([]byte, error) {
+func (d *NavdataDecoder) Raw() ([]byte, error) {
 	offset := 0
 	for {
 		n, err := d.r.Read(d.buf[offset:])
@@ -66,8 +92,8 @@ func (d *Decoder) Raw() ([]byte, error) {
 	return d.buf, nil
 }
 
-// Decode reads and extracts the next navdata payload into *Data.
-func (d *Decoder) Decode(data *Data) error {
+// Decode reads and extracts the next navdata payload into *Navdata.
+func (d *NavdataDecoder) Decode(data *Navdata) error {
 	raw, err := d.Raw()
 	if err != nil {
 		return err
@@ -84,9 +110,9 @@ func (d *Decoder) Decode(data *Data) error {
 	return nil
 }
 
-// Data as found at https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
+// Navdata as found at https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
 // Possibly not correct.
-type Data struct {
+type Navdata struct {
 	Seq uint16
 
 	// Accelerometers

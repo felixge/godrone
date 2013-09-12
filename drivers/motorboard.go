@@ -1,4 +1,4 @@
-package motorboard
+package drivers
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 
 const DefaultTTYPath = "/dev/ttyO0"
 
-type Driver struct {
+type Motorboard struct {
 	file        *os.File
 	speeds      [4]int
 	leds        [4]LedColor
@@ -16,8 +16,8 @@ type Driver struct {
 	mutex       sync.Mutex
 }
 
-func NewDriver(ttyPath string) (*Driver, error) {
-	driver := &Driver{}
+func NewMotorboard(ttyPath string) (*Motorboard, error) {
+	driver := &Motorboard{}
 	err := driver.open(ttyPath)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func NewDriver(ttyPath string) (*Driver, error) {
 	return driver, nil
 }
 
-func (c *Driver) open(path string) error {
+func (c *Motorboard) open(path string) error {
 	file, err := os.OpenFile(path, os.O_RDWR, 0)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (c *Driver) open(path string) error {
 	return nil
 }
 
-func (c *Driver) loop() {
+func (c *Motorboard) loop() {
 	hz := 200
 	sleepTime := (1000 / time.Duration(hz)) * time.Millisecond
 
@@ -52,7 +52,7 @@ func (c *Driver) loop() {
 	}
 }
 
-func (c *Driver) SetLed(led int, color LedColor) {
+func (c *Motorboard) SetLed(led int, color LedColor) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -60,7 +60,7 @@ func (c *Driver) SetLed(led int, color LedColor) {
 	c.ledsChanged = true
 }
 
-func (c *Driver) SetLeds(color LedColor) {
+func (c *Motorboard) SetLeds(color LedColor) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -70,7 +70,7 @@ func (c *Driver) SetLeds(color LedColor) {
 	c.ledsChanged = true
 }
 
-func (c *Driver) SetSpeeds(speed int) {
+func (c *Motorboard) SetSpeeds(speed int) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -90,7 +90,7 @@ const (
 
 // cmd = 011rrrrx xxxggggx (used to be 011grgrg rgrxxxxx in AR Drone 1.0)
 // see: https://github.com/ardrone/ardrone/blob/master/ardrone/motorboard/motorboard.c#L243
-func (m *Driver) ledCmd() []byte {
+func (m *Motorboard) ledCmd() []byte {
 	cmd := make([]byte, 2)
 	cmd[0] = 0x60
 
@@ -107,7 +107,7 @@ func (m *Driver) ledCmd() []byte {
 }
 
 // see: https://github.com/ardrone/ardrone/blob/master/ardrone/motorboard/motorboard.c
-func (m *Driver) pwmCmd() []byte {
+func (m *Motorboard) pwmCmd() []byte {
 	cmd := make([]byte, 5)
 	cmd[0] = byte(0x20 | ((m.speeds[0] & 0x1ff) >> 4))
 	cmd[1] = byte(((m.speeds[0] & 0x1ff) << 4) | ((m.speeds[1] & 0x1ff) >> 5))
@@ -117,12 +117,12 @@ func (m *Driver) pwmCmd() []byte {
 	return cmd
 }
 
-func (m *Driver) updateSpeeds() error {
+func (m *Motorboard) updateSpeeds() error {
 	_, err := m.file.Write(m.pwmCmd())
 	return err
 }
 
-func (m *Driver) updateLeds() error {
+func (m *Motorboard) updateLeds() error {
 	_, err := m.file.Write(m.ledCmd())
 	return err
 }
