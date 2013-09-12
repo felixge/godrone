@@ -1,7 +1,6 @@
 package godrone
 
 import (
-	"fmt"
 	"github.com/felixge/godrone/log"
 	"os"
 )
@@ -13,7 +12,6 @@ func NewFirmware(c Config) (*Firmware, error) {
 	}
 
 	log.Info("Initializing firmware")
-
 	firmware := &Firmware{
 		config: &c,
 		log: log,
@@ -31,11 +29,12 @@ type Firmware struct{
 }
 
 func (f *Firmware) init() error {
-	return fmt.Errorf("shit")
+	return nil
 }
 
 // Loop causes the firmware to take control over the nav
 func (f *Firmware) Loop() error  {
+	f.log.Info("Starting main loop")
 	return nil
 }
 

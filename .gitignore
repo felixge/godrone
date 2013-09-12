@@ -1,5 +1,4 @@
-/bin
-/pkg
+/godrone
 node_modules/
 npm-debug.log
 .DS_Store
