@@ -2,16 +2,18 @@
 package log
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"time"
 )
 
 type Logger interface {
-	Emergency(format string, args ...interface{})
-	Alert(format string, args ...interface{})
-	Crit(format string, args ...interface{})
-	Err(format string, args ...interface{})
+	Emergency(format string, args ...interface{}) error
+	Alert(format string, args ...interface{}) error
+	Crit(format string, args ...interface{}) error
+	Err(format string, args ...interface{}) error
 	Warn(format string, args ...interface{})
 	Notice(format string, args ...interface{})
 	Info(format string, args ...interface{})
@@ -69,20 +71,20 @@ type logger struct {
 	writer     io.Writer
 }
 
-func (l *logger) Emergency(format string, args ...interface{}) {
-	l.log(emergency, format, args...)
+func (l *logger) Emergency(format string, args ...interface{}) error {
+	return l.logError(emergency, format, args...)
 }
 
-func (l *logger) Alert(format string, args ...interface{}) {
-	l.log(alert, format, args...)
+func (l *logger) Alert(format string, args ...interface{}) error {
+	return l.logError(alert, format, args...)
 }
 
-func (l *logger) Crit(format string, args ...interface{}) {
-	l.log(crit, format, args...)
+func (l *logger) Crit(format string, args ...interface{}) error {
+	return l.logError(crit, format, args...)
 }
 
-func (l *logger) Err(format string, args ...interface{}) {
-	l.log(err, format, args...)
+func (l *logger) Err(format string, args ...interface{}) error {
+	return l.logError(err, format, args...)
 }
 
 func (l *logger) Warn(format string, args ...interface{}) {
@@ -101,14 +103,28 @@ func (l *logger) Debug(format string, args ...interface{}) {
 	l.log(debug, format, args...)
 }
 
+func (l *logger) logError(lvl level, format string, args ...interface{}) error {
+	now := time.Now()
+	if lvl > l.level {
+		l.fprintf(l.writer, now, lvl, format, args...)
+		return nil
+	}
+	var b bytes.Buffer
+	l.fprintf(&b, now, lvl, format, args...)
+	return errors.New(b.String())
+}
+
 func (l *logger) log(lvl level, format string, args ...interface{}) {
 	if lvl > l.level {
 		return
 	}
 
-	now := time.Now()
-	format = fmt.Sprintf("%s [%s] %s\n", now.Format(l.timeFormat), levels[lvl], format)
-	if _, err := fmt.Fprintf(l.writer, format, args...); err != nil {
-		fmt.Printf("log error: %s", err)
+	l.fprintf(l.writer, time.Now(), lvl, format, args...)
+}
+
+func (l *logger) fprintf(w io.Writer, t time.Time, lvl level, format string, args ...interface{}) {
+	format = fmt.Sprintf("%s [%s] %s\n", t.Format(l.timeFormat), levels[lvl], format)
+	if _, err := fmt.Fprintf(w, format, args...); err != nil {
+		fmt.Printf("log error: %s: could not write to: %#v", err, w)
 	}
 }

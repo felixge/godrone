@@ -8,8 +8,6 @@ import (
 	"os"
 )
 
-const DefaultTTYPath = "/dev/ttyO1"
-
 type Navboard struct {
 	*NavdataDecoder
 	file *os.File

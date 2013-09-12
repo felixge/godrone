@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-const DefaultTTYPath = "/dev/ttyO0"
-
 type Motorboard struct {
 	file        *os.File
 	speeds      [4]int

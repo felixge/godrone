@@ -1,6 +1,7 @@
 package godrone
 
 import (
+	"github.com/felixge/godrone/drivers"
 	"github.com/felixge/godrone/log"
 	"os"
 )
@@ -12,47 +13,47 @@ func NewFirmware(c Config) (*Firmware, error) {
 	}
 
 	log.Info("Initializing firmware")
-	firmware := &Firmware{
-		config: &c,
-		log: log,
+
+	log.Debug("Initializing navboard")
+	navboard, err := drivers.NewNavboard(c.NavboardTTY)
+	if err != nil {
+		return nil, log.Emergency("Could not initialize navboard: %s", err)
 	}
-	if err := firmware.init(); err != nil {
-		log.Emergency("Could not initialize firmware: %s", err)
-		return nil, err
+
+	firmware := &Firmware{
+		config:   &c,
+		log:      log,
+		navboard: navboard,
 	}
 	return firmware, nil
 }
 
-type Firmware struct{
-	config *Config
-	log log.Logger
-}
-
-func (f *Firmware) init() error {
-	return nil
+type Firmware struct {
+	config   *Config
+	log      log.Logger
+	navboard *drivers.Navboard
 }
 
 // Loop causes the firmware to take control over the nav
-func (f *Firmware) Loop() error  {
+func (f *Firmware) Loop() error {
 	f.log.Info("Starting main loop")
 	return nil
 }
 
+//navboard, err := drivers.NewNavboard(navdata.DefaultTTYPath)
+//if err != nil {
+//panic(err)
+//}
 
-	//navboard, err := drivers.NewNavboard(navdata.DefaultTTYPath)
-	//if err != nil {
-		//panic(err)
-	//}
+//var data navdata.Data
+//for {
+//if err := driver.Decode(&data); err != nil {
+//if err == navdata.ErrSync {
+//log.Printf("%s\n", err)
+//continue
+//}
+//panic(err)
+//}
 
-	//var data navdata.Data
-	//for {
-		//if err := driver.Decode(&data); err != nil {
-			//if err == navdata.ErrSync {
-				//log.Printf("%s\n", err)
-				//continue
-			//}
-			//panic(err)
-		//}
-
-		//log.Printf("%#v\n", data)
-	//}
+//log.Printf("%#v\n", data)
+//}
