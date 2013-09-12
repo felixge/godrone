@@ -10,10 +10,10 @@ env \
   GOOS=linux \
   GOARCH=arm \
   CGO_ENABLED=0 \
-  go install "github.com/felixge/godrone/src/cmd/${bin_name}"
+  go install "godrone/cmd/${bin_name}"
 
 echo "--> Uploading via ftp ..."
-curl -T "${root_dir}/gopath/bin/linux_arm/${bin_name}" "ftp://@${drone_ip}/${bin_name}.next"
+curl -T "${root_dir}/bin/linux_arm/${bin_name}" "ftp://@${drone_ip}/${bin_name}.next"
 
 echo "--> Starting godrone ..."
 "${root_dir}/scripts/start.expect" "${drone_ip}" "${bin_name}"

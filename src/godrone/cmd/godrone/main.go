@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/felixge/godrone/src/navdata"
+	"godrone/navdata"
 	"log"
 )
 

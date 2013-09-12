@@ -1,4 +1,5 @@
-/gopath
+/bin
+/pkg
 node_modules/
 npm-debug.log
 .DS_Store
