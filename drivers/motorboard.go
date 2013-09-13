@@ -29,93 +29,93 @@ func NewMotorboard(ttyPath string, log log.Logger) (*Motorboard, error) {
 	return driver, nil
 }
 
-func (c *Motorboard) open(path string) error {
+func (m *Motorboard) open(path string) error {
 	file, err := os.OpenFile(path, os.O_RDWR, 0)
 	if err != nil {
 		return err
 	}
-	c.file = file
+	m.file = file
 	return nil
 }
 
-func (c *Motorboard) loop() {
+func (m *Motorboard) loop() {
 	//hz := 200
 	//sleepTime := (1000 / time.Duration(hz)) * time.Millisecond
 
-	c.timer = time.Now()
+	m.timer = time.Now()
 	for {
-		c.mutex.Lock()
-		if time.Since(c.timer) >= time.Second {
-			hz := float64(c.counter) / time.Since(c.timer).Seconds()
-			c.log.Debug("motorboard hz: %f", hz)
-			c.counter = 0
-			c.timer = time.Now()
+		m.mutex.Lock()
+		if time.Since(m.timer) >= time.Second {
+			hz := float64(m.counter) / time.Since(m.timer).Seconds()
+			m.log.Debug("motorboard hz: %f", hz)
+			m.counter = 0
+			m.timer = time.Now()
 		}
 
-		c.counter++
-		c.updateSpeeds()
-		if c.ledsChanged {
-			c.updateLeds()
-			c.ledsChanged = false
+		m.counter++
+		m.updateSpeeds()
+		if m.ledsChanged {
+			m.updateLeds()
+			m.ledsChanged = false
 		}
-		c.mutex.Unlock()
+		m.mutex.Unlock()
 
 		//time.Sleep(sleepTime)
 	}
 }
 
-func (c *Motorboard) SetLed(led int, color LedColor) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+func (m *Motorboard) SetLed(led int, color LedColor) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
-	c.leds[led] = color
-	c.ledsChanged = true
+	m.leds[led] = color
+	m.ledsChanged = true
 }
 
-func (c *Motorboard) SetLeds(color LedColor) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+func (m *Motorboard) SetLeds(color LedColor) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
-	for i := 0; i < len(c.leds); i++ {
-		c.leds[i] = color
+	for i := 0; i < len(m.leds); i++ {
+		m.leds[i] = color
 	}
-	c.ledsChanged = true
+	m.ledsChanged = true
 }
 
-func (c *Motorboard) SetSpeeds(speed int) error {
-	for i := 0; i < len(c.speeds); i++ {
-		if err := c.SetSpeed(i, speed); err != nil {
+func (m *Motorboard) SetSpeeds(speed int) error {
+	for i := 0; i < len(m.speeds); i++ {
+		if err := m.SetSpeed(i, speed); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (c *Motorboard) Speed(motorId int) (int, error) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+func (m *Motorboard) Speed(motorId int) (int, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
 
-	if motorId >= len(c.speeds) {
+	if motorId >= len(m.speeds) {
 		return 0, fmt.Errorf("unknown motor: %d", motorId)
 	}
 
-	return c.speeds[motorId], nil
+	return m.speeds[motorId], nil
 }
 
-func (c *Motorboard) SetSpeed(motorId int, speed int) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+func (m *Motorboard) SetSpeed(motorId int, speed int) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
-	if motorId >= len(c.speeds) {
+	if motorId >= len(m.speeds) {
 		return fmt.Errorf("unknown motor: %d", motorId)
 	}
 
-	c.speeds[motorId] = speed
+	m.speeds[motorId] = speed
 	return nil
 }
 
-func (c *Motorboard) MotorCount() int {
-	return len(c.speeds)
+func (m *Motorboard) MotorCount() int {
+	return len(m.speeds)
 }
 
 type LedColor int
