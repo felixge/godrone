@@ -16,6 +16,6 @@ send "mv $bin.next $bin\n"
 expect -re .*#
 send "chmod +x $bin\n"
 expect -re .*#
-send "./$bin\n"
+send "GOGCTRACE=1 ./$bin\n"
 set timeout -1
 expect -re .*#

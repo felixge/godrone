@@ -19,7 +19,7 @@ func NewFirmware(c Config) (*Firmware, error) {
 	log.Info("Initializing firmware")
 
 	log.Debug("Initializing navboard at TTY: %s", c.NavboardTTY)
-	navboard, err := drivers.NewNavboard(c.NavboardTTY)
+	navboard, err := drivers.NewNavboard(c.NavboardTTY, log)
 	if err != nil {
 		return nil, log.Emergency("Could not initialize navboard: %s", err)
 	}

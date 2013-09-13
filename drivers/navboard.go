@@ -4,56 +4,76 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/felixge/godrone/log"
 	"io"
 	"os"
+	"sync"
 )
 
 type Navboard struct {
-	*NavdataDecoder
-	file *os.File
+	decoder *navdataDecoder
+	file    *os.File
+	log     log.Logger
+	navdata *Navdata
+	mutex   sync.RWMutex
+	timer   *loopTimer
 }
 
-func NewNavboard(ttyPath string) (*Navboard, error) {
+func NewNavboard(ttyPath string, log log.Logger) (*Navboard, error) {
 	file, err := os.OpenFile(ttyPath, os.O_RDWR, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	driver := &Navboard{
-		file:           file,
-		NavdataDecoder: NewNavdataDecoder(file),
+	navboard := &Navboard{
+		file:    file,
+		decoder: newNavdataDecoder(file),
+		navdata: &Navdata{},
+		log:     log,
+		timer:   newLoopTimer("navboard", log),
 	}
 
 	if _, err := file.Write([]byte{3}); err != nil {
 		return nil, err
 	}
 
-	return driver, nil
+	go navboard.loop()
+	return navboard, nil
 }
 
-func (n *Navboard) Get() (*Navdata, error) {
-	return &Navdata{}, nil
+func (n *Navboard) loop() {
+	for {
+		n.timer.Tick()
+		n.mutex.Lock()
+		if err := n.decoder.Decode(n.navdata); err != nil {
+			n.log.Err("could not decode navdata: %s", err)
+		}
+		n.mutex.Unlock()
+	}
 }
 
+func (n *Navboard) Get() (Navdata, error) {
+	return *n.navdata, nil
+}
 
 var ErrSync = errors.New("navdata: could not sync with stream")
 
 const dataSize = 60
 
-type NavdataDecoder struct {
+type navdataDecoder struct {
 	r      io.Reader
 	offset int
 	buf    []byte
 }
 
-func NewNavdataDecoder(r io.Reader) *NavdataDecoder {
-	return &NavdataDecoder{r: r, buf: make([]byte, dataSize)}
+func newNavdataDecoder(r io.Reader) *navdataDecoder {
+	return &navdataDecoder{r: r, buf: make([]byte, dataSize)}
 }
 
-// Raw returns a raw navdata payload. The returned buffer may be reused by
-// later Raw() calls. This is a low-level method, direct usage is not
+// raw returns a raw navdata payload. The returned buffer may be reused by
+// later raw() calls. This is a low-level method, direct usage is not
 // recommended.
-func (d *NavdataDecoder) Raw() ([]byte, error) {
+func (d *navdataDecoder) raw() ([]byte, error) {
 	offset := 0
 	for {
 		n, err := d.r.Read(d.buf[offset:])
@@ -96,8 +116,8 @@ func (d *NavdataDecoder) Raw() ([]byte, error) {
 }
 
 // Decode reads and extracts the next navdata payload into *Navdata.
-func (d *NavdataDecoder) Decode(data *Navdata) error {
-	raw, err := d.Raw()
+func (d *navdataDecoder) Decode(data *Navdata) error {
+	raw, err := d.raw()
 	if err != nil {
 		return err
 	}

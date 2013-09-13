@@ -5,7 +5,6 @@ import (
 	"github.com/felixge/godrone/log"
 	"os"
 	"sync"
-	"time"
 )
 
 type Motorboard struct {
@@ -14,19 +13,19 @@ type Motorboard struct {
 	leds        [4]LedColor
 	ledsChanged bool
 	mutex       sync.RWMutex
-	timer       time.Time
-	counter     int
 	log         log.Logger
+	timer       *loopTimer
 }
 
 func NewMotorboard(ttyPath string, log log.Logger) (*Motorboard, error) {
-	driver := &Motorboard{log: log}
-	err := driver.open(ttyPath)
+	timer := newLoopTimer("motorboard", log)
+	motorboard := &Motorboard{log: log, timer: timer}
+	err := motorboard.open(ttyPath)
 	if err != nil {
 		return nil, err
 	}
-	go driver.loop()
-	return driver, nil
+	go motorboard.loop()
+	return motorboard, nil
 }
 
 func (m *Motorboard) open(path string) error {
@@ -39,28 +38,15 @@ func (m *Motorboard) open(path string) error {
 }
 
 func (m *Motorboard) loop() {
-	//hz := 200
-	//sleepTime := (1000 / time.Duration(hz)) * time.Millisecond
-
-	m.timer = time.Now()
 	for {
-		m.mutex.Lock()
-		if time.Since(m.timer) >= time.Second {
-			hz := float64(m.counter) / time.Since(m.timer).Seconds()
-			m.log.Debug("motorboard hz: %f", hz)
-			m.counter = 0
-			m.timer = time.Now()
-		}
-
-		m.counter++
+		m.timer.Tick()
+		m.mutex.RLock()
 		m.updateSpeeds()
 		if m.ledsChanged {
 			m.updateLeds()
 			m.ledsChanged = false
 		}
-		m.mutex.Unlock()
-
-		//time.Sleep(sleepTime)
+		m.mutex.RUnlock()
 	}
 }
 
@@ -80,15 +66,6 @@ func (m *Motorboard) SetLeds(color LedColor) {
 		m.leds[i] = color
 	}
 	m.ledsChanged = true
-}
-
-func (m *Motorboard) SetSpeeds(speed int) error {
-	for i := 0; i < len(m.speeds); i++ {
-		if err := m.SetSpeed(i, speed); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (m *Motorboard) Speed(motorId int) (int, error) {
