@@ -1,9 +1,11 @@
 package godrone
 
 import (
+	"github.com/felixge/godrone/apis"
 	"github.com/felixge/godrone/drivers"
 	"github.com/felixge/godrone/log"
 	"os"
+	"time"
 )
 
 func NewFirmware(c Config) (*Firmware, error) {
@@ -12,29 +14,41 @@ func NewFirmware(c Config) (*Firmware, error) {
 		return nil, err
 	}
 
+	start := time.Now()
+	lap := start
 	log.Info("Initializing firmware")
 
-	log.Debug("Initializing navboard: %s", c.NavboardTTY)
+	log.Debug("Initializing navboard at TTY: %s", c.NavboardTTY)
 	navboard, err := drivers.NewNavboard(c.NavboardTTY)
 	if err != nil {
 		return nil, log.Emergency("Could not initialize navboard: %s", err)
 	}
-	log.Debug("Initialized navboard")
+	log.Debug("Initialized navboard, took: %s", time.Since(lap))
 
-	log.Debug("Initializing motorboard: %s", c.MotorboardTTY)
+	lap = time.Now()
+	log.Debug("Initializing motorboard at TTY: %s", c.MotorboardTTY)
 	motorboard, err := drivers.NewMotorboard(c.MotorboardTTY)
 	if err != nil {
 		return nil, log.Emergency("Could not initialize motorboard: %s", err)
 	}
-	log.Debug("Initialized motorboard")
+	log.Debug("Initialized navboard, took: %s", time.Since(lap))
+
+	lap = time.Now()
+	log.Debug("Initializing http api on port: %d", c.HttpAPIPort)
+	httpApi, err := apis.NewHttpAPI(c.HttpAPIPort, motorboard)
+	if err != nil {
+		return nil, log.Emergency("Could not initialize http api: %s", err)
+	}
+	log.Debug("Initialized http api, took: %s", time.Since(lap))
 
 	firmware := &Firmware{
 		config:     &c,
 		log:        log,
 		navboard:   navboard,
 		motorboard: motorboard,
+		httpApi:    httpApi,
 	}
-	log.Info("Initialized firmware")
+	log.Info("Initialized firmware, took: %s", time.Since(start))
 	return firmware, nil
 }
 
@@ -43,12 +57,14 @@ type Firmware struct {
 	log        log.Logger
 	navboard   *drivers.Navboard
 	motorboard *drivers.Motorboard
+	httpApi    *apis.HttpAPI
 }
 
 // Loop causes the firmware to take control over the nav
 func (f *Firmware) Loop() error {
 	f.log.Info("Starting main loop")
-	return nil
+	f.log.Debug("Serving http api")
+	return f.httpApi.Serve()
 }
 
 //navboard, err := drivers.NewNavboard(navdata.DefaultTTYPath)

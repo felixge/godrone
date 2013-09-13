@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -11,7 +12,7 @@ type Motorboard struct {
 	speeds      [4]int
 	leds        [4]LedColor
 	ledsChanged bool
-	mutex       sync.Mutex
+	mutex       sync.RWMutex
 }
 
 func NewMotorboard(ttyPath string) (*Motorboard, error) {
@@ -68,13 +69,41 @@ func (c *Motorboard) SetLeds(color LedColor) {
 	c.ledsChanged = true
 }
 
-func (c *Motorboard) SetSpeeds(speed int) {
+func (c *Motorboard) SetSpeeds(speed int) error {
+	for i := 0; i < len(c.speeds); i++ {
+		if err := c.SetSpeed(i, speed); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Motorboard) Speed(motorId int) (int, error) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	if motorId >= len(c.speeds) {
+		return 0, fmt.Errorf("unknown motor: %d", motorId)
+	}
+
+	return c.speeds[motorId], nil
+}
+
+func (c *Motorboard) SetSpeed(motorId int, speed int) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	for i := 0; i < len(c.leds); i++ {
-		c.speeds[i] = speed
+	if motorId >= len(c.speeds) {
+		return fmt.Errorf("unknown motor: %d", motorId)
 	}
+
+	c.speeds[motorId] = speed
+	return nil
+}
+
+
+func (c *Motorboard) MotorCount() int {
+	return len(c.speeds)
 }
 
 type LedColor int
