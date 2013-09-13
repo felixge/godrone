@@ -164,15 +164,13 @@ func (h *HttpAPI) navdata(hw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//navdata, err := h.navboard.Get()
-	//if err != nil {
-		//w.WriteHeader(http.StatusInternalServerError)
-		//fmt.Fprintf(w, "could not get navdata: %s\n", err)
-		//return
-	//}
+	navdata, err := h.navboard.Get()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "could not get navdata: %s\n", err)
+		return
+	}
 
-	//encoder := json.NewEncoder(w)
-	//if err := encoder.Encode(navdata); err != nil {
-		//h.log.Err("could not encode navdata json: %s", err)
-	//}
+	h.log.Debug("navdata: %#v", navdata)
+	w.writeJSON(navdata)
 }

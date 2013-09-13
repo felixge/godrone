@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"fmt"
+	"github.com/felixge/godrone/log"
 	"os"
 	"sync"
 	"time"
@@ -13,10 +14,13 @@ type Motorboard struct {
 	leds        [4]LedColor
 	ledsChanged bool
 	mutex       sync.RWMutex
+	timer       time.Time
+	counter     int
+	log         log.Logger
 }
 
-func NewMotorboard(ttyPath string) (*Motorboard, error) {
-	driver := &Motorboard{}
+func NewMotorboard(ttyPath string, log log.Logger) (*Motorboard, error) {
+	driver := &Motorboard{log: log}
 	err := driver.open(ttyPath)
 	if err != nil {
 		return nil, err
@@ -35,11 +39,20 @@ func (c *Motorboard) open(path string) error {
 }
 
 func (c *Motorboard) loop() {
-	hz := 200
-	sleepTime := (1000 / time.Duration(hz)) * time.Millisecond
+	//hz := 200
+	//sleepTime := (1000 / time.Duration(hz)) * time.Millisecond
 
+	c.timer = time.Now()
 	for {
 		c.mutex.Lock()
+		if time.Since(c.timer) >= time.Second {
+			hz := float64(c.counter) / time.Since(c.timer).Seconds()
+			c.log.Debug("motorboard hz: %f", hz)
+			c.counter = 0
+			c.timer = time.Now()
+		}
+
+		c.counter++
 		c.updateSpeeds()
 		if c.ledsChanged {
 			c.updateLeds()
@@ -47,7 +60,7 @@ func (c *Motorboard) loop() {
 		}
 		c.mutex.Unlock()
 
-		time.Sleep(sleepTime)
+		//time.Sleep(sleepTime)
 	}
 }
 
@@ -100,7 +113,6 @@ func (c *Motorboard) SetSpeed(motorId int, speed int) error {
 	c.speeds[motorId] = speed
 	return nil
 }
-
 
 func (c *Motorboard) MotorCount() int {
 	return len(c.speeds)

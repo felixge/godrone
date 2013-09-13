@@ -27,7 +27,7 @@ func NewFirmware(c Config) (*Firmware, error) {
 
 	lap = time.Now()
 	log.Debug("Initializing motorboard at TTY: %s", c.MotorboardTTY)
-	motorboard, err := drivers.NewMotorboard(c.MotorboardTTY)
+	motorboard, err := drivers.NewMotorboard(c.MotorboardTTY, log)
 	if err != nil {
 		return nil, log.Emergency("Could not initialize motorboard: %s", err)
 	}

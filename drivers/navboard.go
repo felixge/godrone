@@ -31,6 +31,11 @@ func NewNavboard(ttyPath string) (*Navboard, error) {
 	return driver, nil
 }
 
+func (n *Navboard) Get() (*Navdata, error) {
+	return &Navdata{}, nil
+}
+
+
 var ErrSync = errors.New("navdata: could not sync with stream")
 
 const dataSize = 60
