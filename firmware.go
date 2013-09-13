@@ -14,24 +14,35 @@ func NewFirmware(c Config) (*Firmware, error) {
 
 	log.Info("Initializing firmware")
 
-	log.Debug("Initializing navboard")
+	log.Debug("Initializing navboard: %s", c.NavboardTTY)
 	navboard, err := drivers.NewNavboard(c.NavboardTTY)
 	if err != nil {
 		return nil, log.Emergency("Could not initialize navboard: %s", err)
 	}
+	log.Debug("Initialized navboard")
+
+	log.Debug("Initializing motorboard: %s", c.MotorboardTTY)
+	motorboard, err := drivers.NewMotorboard(c.MotorboardTTY)
+	if err != nil {
+		return nil, log.Emergency("Could not initialize motorboard: %s", err)
+	}
+	log.Debug("Initialized motorboard")
 
 	firmware := &Firmware{
-		config:   &c,
-		log:      log,
-		navboard: navboard,
+		config:     &c,
+		log:        log,
+		navboard:   navboard,
+		motorboard: motorboard,
 	}
+	log.Info("Initialized firmware")
 	return firmware, nil
 }
 
 type Firmware struct {
-	config   *Config
-	log      log.Logger
-	navboard *drivers.Navboard
+	config     *Config
+	log        log.Logger
+	navboard   *drivers.Navboard
+	motorboard *drivers.Motorboard
 }
 
 // Loop causes the firmware to take control over the nav
