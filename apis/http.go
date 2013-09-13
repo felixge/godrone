@@ -44,6 +44,13 @@ func (h *HttpAPI) Serve() error {
 var motorsRegexp = regexp.MustCompile("^/motors/([0-9]+)$")
 
 func (h *HttpAPI) motors(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" && r.Method != "PUT" {
+			w.Header().Set("Allow", "GET,PUT")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(w, "invalid method: %s\n", r.Method)
+			return
+	}
+
 	var (
 		allMotors = r.URL.Path == "/motors/"
 		motorId   = -1
@@ -52,7 +59,6 @@ func (h *HttpAPI) motors(w http.ResponseWriter, r *http.Request) {
 	if !allMotors {
 		m := motorsRegexp.FindStringSubmatch(r.URL.Path)
 		if len(m) != 2 {
-
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "unknown motor\n")
 			return
