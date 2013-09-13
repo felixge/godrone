@@ -20,7 +20,7 @@ func NewNavboard(ttyPath string) (*Navboard, error) {
 	}
 
 	driver := &Navboard{
-		file:    file,
+		file:           file,
 		NavdataDecoder: NewNavdataDecoder(file),
 	}
 

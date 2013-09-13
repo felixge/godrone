@@ -105,9 +105,8 @@ func (l *logger) Debug(format string, args ...interface{}) {
 
 func (l *logger) logError(lvl level, format string, args ...interface{}) error {
 	now := time.Now()
-	if lvl > l.level {
+	if lvl <= l.level {
 		l.fprintf(l.writer, now, lvl, format, args...)
-		return nil
 	}
 	var b bytes.Buffer
 	l.fprintf(&b, now, lvl, format, args...)

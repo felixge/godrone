@@ -35,7 +35,7 @@ func NewFirmware(c Config) (*Firmware, error) {
 
 	lap = time.Now()
 	log.Debug("Initializing http api on port: %d", c.HttpAPIPort)
-	httpApi, err := apis.NewHttpAPI(c.HttpAPIPort, motorboard)
+	httpApi, err := apis.NewHttpAPI(c.HttpAPIPort, motorboard, navboard, log)
 	if err != nil {
 		return nil, log.Emergency("Could not initialize http api: %s", err)
 	}
