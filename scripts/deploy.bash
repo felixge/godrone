@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 set -eu
 
-root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+root_dir="$( cd "${dir}" && cd .. && pwd )"
 pkg_path="github.com/felixge/godrone/cmd"
 bin_name="godrone"
 drone_ip="${1:-192.168.1.1}"
 
 echo "--> Fetching dependencies ..."
 go get "${pkg_path}"
+go get "github.com/felixge/makefs"
+
+echo "--> Building http files ..."
+go run "${dir}/http_files.go"
 
 echo "--> Compiling arm binary ..."
 env \

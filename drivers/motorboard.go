@@ -3,6 +3,7 @@ package drivers
 import (
 	"fmt"
 	"github.com/felixge/godrone/log"
+	"github.com/felixge/godrone/util"
 	"os"
 	"sync"
 )
@@ -14,11 +15,11 @@ type Motorboard struct {
 	ledsChanged bool
 	mutex       sync.RWMutex
 	log         log.Logger
-	timer       *loopTimer
+	timer       *util.LoopTimer
 }
 
 func NewMotorboard(ttyPath string, log log.Logger) (*Motorboard, error) {
-	timer := newLoopTimer("motorboard", log)
+	timer := util.NewLoopTimer("motorboard", log)
 	motorboard := &Motorboard{log: log, timer: timer}
 	err := motorboard.open(ttyPath)
 	if err != nil {

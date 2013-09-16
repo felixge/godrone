@@ -1,7 +1,7 @@
 package godrone
 
 import (
-	"github.com/felixge/godrone/apis"
+	"github.com/felixge/godrone/apis/http"
 	"github.com/felixge/godrone/drivers"
 	"github.com/felixge/godrone/log"
 	"os"
@@ -35,7 +35,7 @@ func NewFirmware(c Config) (*Firmware, error) {
 
 	lap = time.Now()
 	log.Debug("Initializing http api on port: %d", c.HttpAPIPort)
-	httpApi, err := apis.NewHttpAPI(c.HttpAPIPort, motorboard, navboard, log)
+	httpApi, err := http.NewHttpAPI(c.HttpAPIPort, motorboard, navboard, log)
 	if err != nil {
 		return nil, log.Emergency("Could not initialize http api: %s", err)
 	}
@@ -57,7 +57,7 @@ type Firmware struct {
 	log        log.Logger
 	navboard   *drivers.Navboard
 	motorboard *drivers.Motorboard
-	httpApi    *apis.HttpAPI
+	httpApi    *http.HttpAPI
 }
 
 // Loop causes the firmware to take control over the nav

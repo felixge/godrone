@@ -1,6 +1,7 @@
-package apis
+package http
 
 import (
+	"code.google.com/p/go.net/websocket"
 	"encoding/json"
 	"fmt"
 	"github.com/felixge/godrone/drivers"
@@ -12,7 +13,9 @@ import (
 	"strconv"
 )
 
-type responseWriter struct{
+var files http.FileSystem
+
+type responseWriter struct {
 	http.ResponseWriter
 	log log.Logger
 }
@@ -35,6 +38,8 @@ func NewHttpAPI(port int, m *drivers.Motorboard, n *drivers.Navboard, log log.Lo
 	mux := http.NewServeMux()
 	mux.HandleFunc("/motors/", api.motors)
 	mux.HandleFunc("/navdata/", api.navdata)
+	mux.Handle("/ws", websocket.Handler(api.websocket))
+	mux.Handle("/", http.FileServer(files))
 	api.mux = mux
 
 	addr := fmt.Sprintf(":%d", port)
@@ -173,4 +178,31 @@ func (h *HttpAPI) navdata(hw http.ResponseWriter, r *http.Request) {
 
 	h.log.Debug("navdata: %#v", navdata)
 	w.writeJSON(navdata)
+}
+
+func (h *HttpAPI) websocket(ws *websocket.Conn) {
+	addr := ws.RemoteAddr()
+
+	defer ws.Close()
+	defer h.log.Info("Disconnected websocket client: %s", addr)
+
+	h.log.Info("New websocket client: %s", addr)
+	navdataCh, errCh := h.navboard.Subscribe()
+	defer close(navdataCh)
+	defer close(errCh)
+
+	for {
+		var sendErr error
+		select {
+		case navdata := <-navdataCh:
+			sendErr = websocket.JSON.Send(ws, navdata)
+		case err := <-errCh:
+			sendErr = websocket.JSON.Send(ws, err)
+		}
+
+		if sendErr != nil {
+			h.log.Err("Error writing to websocket client: %s, %s", addr, sendErr)
+			break
+		}
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/felixge/godrone/log"
+	"github.com/felixge/godrone/util"
 	"io"
 	"os"
 	"sync"
@@ -14,9 +15,15 @@ type Navboard struct {
 	decoder *navdataDecoder
 	file    *os.File
 	log     log.Logger
-	navdata *Navdata
+	navdata Navdata
 	mutex   sync.RWMutex
-	timer   *loopTimer
+	timer   *util.LoopTimer
+	subs    []subscription
+}
+
+type subscription struct {
+	navdata chan Navdata
+	err     chan error
 }
 
 func NewNavboard(ttyPath string, log log.Logger) (*Navboard, error) {
@@ -28,9 +35,8 @@ func NewNavboard(ttyPath string, log log.Logger) (*Navboard, error) {
 	navboard := &Navboard{
 		file:    file,
 		decoder: newNavdataDecoder(file),
-		navdata: &Navdata{},
 		log:     log,
-		timer:   newLoopTimer("navboard", log),
+		timer:   util.NewLoopTimer("navboard", log),
 	}
 
 	if _, err := file.Write([]byte{3}); err != nil {
@@ -45,15 +51,48 @@ func (n *Navboard) loop() {
 	for {
 		n.timer.Tick()
 		n.mutex.Lock()
-		if err := n.decoder.Decode(n.navdata); err != nil {
+
+		err := n.decoder.Decode(&n.navdata)
+		if err != nil {
 			n.log.Err("could not decode navdata: %s", err)
 		}
+
+		// publish result to all subscribers
+		for _, sub := range n.subs {
+			if err != nil {
+				select {
+				case sub.err <- err:
+				default:
+				}
+			} else {
+				select {
+				case sub.navdata <- n.navdata:
+				default:
+				}
+			}
+		}
+
 		n.mutex.Unlock()
 	}
 }
 
+func (n *Navboard) Subscribe() (chan Navdata, chan error) {
+	var (
+		navdata = make(chan Navdata, 1)
+		err     = make(chan error, 1)
+		sub     = subscription{navdata, err}
+	)
+
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+	n.subs = append(n.subs, sub)
+	return navdata, err
+}
+
 func (n *Navboard) Get() (Navdata, error) {
-	return *n.navdata, nil
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+	return n.navdata, nil
 }
 
 var ErrSync = errors.New("navdata: could not sync with stream")

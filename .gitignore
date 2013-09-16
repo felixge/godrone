@@ -1,3 +1,4 @@
+/apis/http/fs.go
 /godrone
 node_modules/
 npm-debug.log
