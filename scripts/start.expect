@@ -4,11 +4,13 @@ set bin [lindex $argv 1]
 
 spawn telnet $ip
 expect -re .*#
+send "touch /tmp/.norespawn\n"
+expect -re .*#
+send "killall -9 program.elf\n"
+expect -re .*#
+send "killall -9 $bin\n"
+expect -re .*#
 send "cd /data/video\n"
-expect -re .*#
-send "killall program.elf\n"
-expect -re .*#
-send "killall $bin\n"
 expect -re .*#
 send "rm $bin\n"
 expect -re .*#
