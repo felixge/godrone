@@ -62,27 +62,8 @@ type Firmware struct {
 	httpApi    *http.HttpAPI
 }
 
-// Loop causes the firmware to take control over the nav
 func (f *Firmware) Loop() error {
 	f.log.Info("Starting main loop")
 	f.log.Debug("Serving http api")
 	return f.httpApi.Serve()
 }
-
-//navboard, err := drivers.NewNavboard(navdata.DefaultTTYPath)
-//if err != nil {
-//panic(err)
-//}
-
-//var data navdata.Data
-//for {
-//if err := driver.Decode(&data); err != nil {
-//if err == navdata.ErrSync {
-//log.Printf("%s\n", err)
-//continue
-//}
-//panic(err)
-//}
-
-//log.Printf("%#v\n", data)
-//}
