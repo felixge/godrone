@@ -12,7 +12,7 @@ func main() {
 	}
 
 	// Run the firmware
-	if err := firmware.Loop(); err != nil {
+	if err := firmware.Run(); err != nil {
 		panic(err)
 	}
 }

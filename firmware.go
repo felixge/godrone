@@ -62,7 +62,7 @@ type Firmware struct {
 	httpApi    *http.HttpAPI
 }
 
-func (f *Firmware) Loop() error {
+func (f *Firmware) Run() error {
 	f.log.Info("Starting main loop")
 	f.log.Debug("Serving http api")
 	return f.httpApi.Serve()
