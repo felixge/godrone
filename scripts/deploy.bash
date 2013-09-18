@@ -5,6 +5,7 @@ dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 root_dir="$( cd "${dir}" && cd .. && pwd )"
 pkg_path="github.com/felixge/godrone/cmd"
 bin_name="godrone"
+script_name="deploy.${bin_name}.sh"
 drone_ip="${1:-192.168.1.1}"
 
 echo "--> Fetching dependencies ..."
@@ -22,7 +23,9 @@ env \
   go build -o "${bin_name}" "${pkg_path}"
 
 echo "--> Uploading via ftp ..."
-curl -T "${bin_name}" "ftp://@${drone_ip}/${bin_name}.next"
+curl \
+  -T "${dir}/${script_name}" "ftp://@${drone_ip}/${script_name}" \
+  -T "${bin_name}" "ftp://@${drone_ip}/${bin_name}.next"
 
 echo "--> Starting godrone ..."
-"${root_dir}/scripts/start.expect" "${drone_ip}" "${bin_name}"
+"${root_dir}/scripts/deploy.telnet.expect" "${drone_ip}" "${bin_name}" "${script_name}"

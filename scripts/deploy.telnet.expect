@@ -1,0 +1,10 @@
+#!/usr/bin/env expect -f
+set ip [lindex $argv 0]
+set bin [lindex $argv 1]
+set script [lindex $argv 2]
+
+spawn telnet $ip
+expect -re .*#
+send "sh /data/video/$script $bin\n"
+set timeout -1
+expect -re .*#
