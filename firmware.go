@@ -41,6 +41,8 @@ func NewFirmware(c Config) (*Firmware, error) {
 	}
 	log.Debug("Initialized http api, took: %s", time.Since(lap))
 
+	motorboard.SetLeds(drivers.LedGreen)
+
 	firmware := &Firmware{
 		config:     &c,
 		log:        log,

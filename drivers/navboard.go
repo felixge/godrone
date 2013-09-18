@@ -83,7 +83,9 @@ func (n *Navboard) Subscribe() (chan Navdata, chan error) {
 		sub     = subscription{navdata, err}
 	)
 
+	n.log.Debug("aquiring lock")
 	n.mutex.Lock()
+	n.log.Debug("qquired lock")
 	defer n.mutex.Unlock()
 	n.subs = append(n.subs, sub)
 	return navdata, err

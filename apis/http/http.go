@@ -72,8 +72,7 @@ func (h *HttpAPI) Serve() error {
 }
 
 func (h *HttpAPI) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	h.log.Info("%s %s", r.Method, r.URL)
-
+	h.log.Debug("%s %s", r.Method, r.URL)
 	h.mux.ServeHTTP(w, r)
 }
 
@@ -190,11 +189,13 @@ func (h *HttpAPI) websocket(ws *websocket.Conn) {
 	navdataCh, errCh := h.navboard.Subscribe()
 	defer close(navdataCh)
 	defer close(errCh)
+	h.log.Info("Subscribed")
 
 	for {
 		var sendErr error
 		select {
 		case navdata := <-navdataCh:
+			h.log.Debug("navdata: %#v", navdata)
 			sendErr = websocket.JSON.Send(ws, navdata)
 		case err := <-errCh:
 			sendErr = websocket.JSON.Send(ws, err)

@@ -18,6 +18,8 @@ send "mv $bin.next $bin\n"
 expect -re .*#
 send "chmod +x $bin\n"
 expect -re .*#
+send "gpio 181 -d ho 1\n"
+expect -re .*#
 send "GOGCTRACE=1 ./$bin\n"
 set timeout -1
 expect -re .*#

@@ -6,6 +6,7 @@ import (
 	"github.com/felixge/godrone/util"
 	"os"
 	"sync"
+	"time"
 )
 
 type Motorboard struct {
@@ -39,7 +40,9 @@ func (m *Motorboard) open(path string) error {
 }
 
 func (m *Motorboard) loop() {
+	interval := time.Second / 220
 	for {
+		start := time.Now()
 		m.timer.Tick()
 		m.mutex.RLock()
 		m.updateSpeeds()
@@ -48,6 +51,11 @@ func (m *Motorboard) loop() {
 			m.ledsChanged = false
 		}
 		m.mutex.RUnlock()
+
+		sleep := interval - time.Since(start)
+		if sleep > 0 {
+			time.Sleep(sleep)
+		}
 	}
 }
 
