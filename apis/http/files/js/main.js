@@ -62,7 +62,10 @@ $(function() {
       res.push([i, field.data[i]])
     }
 
-    return res;
+    return {
+      data: res,
+      label: fieldName,
+    };
   }
 
   function getPlots() {
@@ -82,7 +85,7 @@ $(function() {
     },
       yaxis: {
         min: 0,
-      max: scale
+        max: scale
       },
       xaxis: {
         show: false

@@ -197,9 +197,9 @@ type Navdata struct {
 	Seq uint16
 
 	// Accelerometers
-	Ax uint16
-	Ay uint16
-	Az uint16
+	Ax int16
+	Ay int16
+	Az int16
 
 	// Gyroscopes
 	Gx int16
