@@ -1,5 +1,5 @@
 /apis/http/fs.go
-/godrone
+/scripts/godrone
 node_modules/
 npm-debug.log
 .DS_Store

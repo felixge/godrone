@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-root_dir="$( cd "${dir}" && cd .. && pwd )"
+scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 pkg_path="github.com/felixge/godrone/cmd"
 bin_name="godrone"
 script_name="${bin_name}.sh"
@@ -13,19 +12,19 @@ go get "${pkg_path}"
 go get "github.com/felixge/makefs"
 
 echo "--> Building http files ..."
-go run "${dir}/http_files.go"
+go run "${scripts_dir}/http_files.go"
 
 echo "--> Compiling arm binary ..."
 env \
   GOOS=linux \
   GOARCH=arm \
   CGO_ENABLED=0 \
-  go build -o "${bin_name}" "${pkg_path}"
+  go build -o "${scripts_dir}/${bin_name}" "${pkg_path}"
 
 echo "--> Uploading via ftp ..."
 curl \
-  -T "${dir}/${script_name}" "ftp://@${drone_ip}/${script_name}" \
-  -T "${bin_name}" "ftp://@${drone_ip}/${bin_name}.next"
+  -T "${scripts_dir}/${script_name}" "ftp://@${drone_ip}/${script_name}" \
+  -T "${scripts_dir}/${bin_name}" "ftp://@${drone_ip}/${bin_name}.next"
 
 echo "--> Starting godrone ..."
-"${root_dir}/scripts/deploy.expect" "${drone_ip}" "${bin_name}" "${script_name}"
+"${scripts_dir}/deploy.expect" "${drone_ip}" "${bin_name}" "${script_name}"
