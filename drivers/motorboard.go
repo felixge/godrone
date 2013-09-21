@@ -11,7 +11,7 @@ import (
 
 type Motorboard struct {
 	file        *os.File
-	speeds      [4]int
+	pwms        [4]int
 	leds        [4]LedColor
 	ledsChanged bool
 	mutex       sync.RWMutex
@@ -40,7 +40,8 @@ func (m *Motorboard) open(path string) error {
 }
 
 func (m *Motorboard) loop() {
-	interval := time.Second / 220
+	// navboard runs at ~200HZ
+	interval := time.Second / 400
 	for {
 		start := time.Now()
 		m.timer.Tick()
@@ -81,27 +82,27 @@ func (m *Motorboard) Speed(motorId int) (int, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if motorId >= len(m.speeds) {
+	if motorId >= len(m.pwms) {
 		return 0, fmt.Errorf("unknown motor: %d", motorId)
 	}
 
-	return m.speeds[motorId], nil
+	return m.pwms[motorId], nil
 }
 
 func (m *Motorboard) SetSpeed(motorId int, speed int) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if motorId >= len(m.speeds) {
+	if motorId >= len(m.pwms) {
 		return fmt.Errorf("unknown motor: %d", motorId)
 	}
 
-	m.speeds[motorId] = speed
+	m.pwms[motorId] = speed
 	return nil
 }
 
 func (m *Motorboard) MotorCount() int {
-	return len(m.speeds)
+	return len(m.pwms)
 }
 
 type LedColor int
@@ -134,11 +135,11 @@ func (m *Motorboard) ledCmd() []byte {
 // see: https://github.com/ardrone/ardrone/blob/master/ardrone/motorboard/motorboard.c
 func (m *Motorboard) pwmCmd() []byte {
 	cmd := make([]byte, 5)
-	cmd[0] = byte(0x20 | ((m.speeds[0] & 0x1ff) >> 4))
-	cmd[1] = byte(((m.speeds[0] & 0x1ff) << 4) | ((m.speeds[1] & 0x1ff) >> 5))
-	cmd[2] = byte(((m.speeds[1] & 0x1ff) << 3) | ((m.speeds[2] & 0x1ff) >> 6))
-	cmd[3] = byte(((m.speeds[2] & 0x1ff) << 2) | ((m.speeds[3] & 0x1ff) >> 7))
-	cmd[4] = byte(((m.speeds[3] & 0x1ff) << 1))
+	cmd[0] = byte(0x20 | ((m.pwms[0] & 0x1ff) >> 4))
+	cmd[1] = byte(((m.pwms[0] & 0x1ff) << 4) | ((m.pwms[1] & 0x1ff) >> 5))
+	cmd[2] = byte(((m.pwms[1] & 0x1ff) << 3) | ((m.pwms[2] & 0x1ff) >> 6))
+	cmd[3] = byte(((m.pwms[2] & 0x1ff) << 2) | ((m.pwms[3] & 0x1ff) >> 7))
+	cmd[4] = byte(((m.pwms[3] & 0x1ff) << 1))
 	return cmd
 }
 
