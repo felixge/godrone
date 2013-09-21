@@ -187,15 +187,13 @@ func (h *HttpAPI) websocket(ws *websocket.Conn) {
 
 	h.log.Info("New websocket client: %s", addr)
 	navdataCh, errCh := h.navboard.Subscribe()
-	defer close(navdataCh)
-	defer close(errCh)
+	defer h.navboard.Unsubscribe(navdataCh, errCh)
 	h.log.Info("Subscribed")
 
 	for {
 		var sendErr error
 		select {
 		case navdata := <-navdataCh:
-			h.log.Debug("navdata: %#v", navdata)
 			sendErr = websocket.JSON.Send(ws, navdata)
 		case err := <-errCh:
 			sendErr = websocket.JSON.Send(ws, err)

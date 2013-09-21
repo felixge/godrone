@@ -16,7 +16,7 @@ type Motorboard struct {
 	pwms        [4]int
 	leds        [4]LedColor
 	ledsChanged bool
-	mutex       sync.RWMutex
+	lock        sync.RWMutex
 	log         log.Logger
 	timer       *util.LoopTimer
 }
@@ -47,13 +47,13 @@ func (m *Motorboard) loop() {
 	for {
 		start := time.Now()
 		m.timer.Tick()
-		m.mutex.RLock()
+		m.lock.RLock()
 		m.updateSpeeds()
 		if m.ledsChanged {
 			m.updateLeds()
 			m.ledsChanged = false
 		}
-		m.mutex.RUnlock()
+		m.lock.RUnlock()
 
 		sleep := interval - time.Since(start)
 		if sleep > 0 {
@@ -62,27 +62,33 @@ func (m *Motorboard) loop() {
 	}
 }
 
+func (m *Motorboard) Leds() []LedColor {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return m.leds[:]
+}
+
 func (m *Motorboard) SetLed(led int, color LedColor) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
 	m.leds[led] = color
 	m.ledsChanged = true
 }
 
-func (m *Motorboard) SetLeds(color LedColor) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+func (m *Motorboard) SetLeds(colors []LedColor) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
-	for i := 0; i < len(m.leds); i++ {
-		m.leds[i] = color
+	for i := 0; i < len(m.leds) && i < len(colors); i++ {
+		m.leds[i] = colors[i]
 	}
 	m.ledsChanged = true
 }
 
 func (m *Motorboard) Speed(motorId int) (float64, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	m.lock.RLock()
+	defer m.lock.RUnlock()
 
 	if motorId >= len(m.pwms) {
 		return 0, fmt.Errorf("unknown motor: %d", motorId)
@@ -92,8 +98,8 @@ func (m *Motorboard) Speed(motorId int) (float64, error) {
 }
 
 func (m *Motorboard) SetSpeed(motorId int, speed float64) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 
 	if motorId >= len(m.pwms) {
 		return fmt.Errorf("unknown motor: %d", motorId)

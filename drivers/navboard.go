@@ -8,6 +8,7 @@ import (
 	"github.com/felixge/godrone/util"
 	"io"
 	"os"
+	"runtime"
 	"sync"
 )
 
@@ -16,9 +17,9 @@ type Navboard struct {
 	file    *os.File
 	log     log.Logger
 	navdata Navdata
-	mutex   sync.RWMutex
+	lock    sync.RWMutex
 	timer   *util.LoopTimer
-	subs    []subscription
+	subs    []*subscription
 }
 
 type subscription struct {
@@ -50,11 +51,11 @@ func NewNavboard(ttyPath string, log log.Logger) (*Navboard, error) {
 func (n *Navboard) loop() {
 	for {
 		n.timer.Tick()
-		n.mutex.Lock()
+		n.lock.Lock()
 
 		err := n.decoder.Decode(&n.navdata)
 		if err != nil {
-			n.log.Err("could not decode navdata: %s", err)
+			n.log.Err("Could not decode navdata: %s", err)
 		}
 
 		// publish result to all subscribers
@@ -72,7 +73,9 @@ func (n *Navboard) loop() {
 			}
 		}
 
-		n.mutex.Unlock()
+		n.lock.Unlock()
+		// allow other goroutines to aquire the lock
+		runtime.Gosched()
 	}
 }
 
@@ -80,20 +83,34 @@ func (n *Navboard) Subscribe() (chan Navdata, chan error) {
 	var (
 		navdata = make(chan Navdata, 1)
 		err     = make(chan error, 1)
-		sub     = subscription{navdata, err}
+		sub     = &subscription{navdata, err}
 	)
 
-	n.log.Debug("aquiring lock")
-	n.mutex.Lock()
-	n.log.Debug("qquired lock")
-	defer n.mutex.Unlock()
+	n.lock.Lock()
+	defer n.lock.Unlock()
 	n.subs = append(n.subs, sub)
 	return navdata, err
 }
 
+func (n *Navboard) Unsubscribe(navdataCh chan Navdata, errCh chan error) bool {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+
+	for i, s := range n.subs {
+		if s.navdata == navdataCh && s.err == errCh {
+			n.subs = append(n.subs[0:i], n.subs[i+1:]...)
+			close(navdataCh)
+			close(errCh)
+			return true
+		}
+	}
+	n.log.Warn("Could not unsubscribe from navdata")
+	return false
+}
+
 func (n *Navboard) Get() (Navdata, error) {
-	n.mutex.RLock()
-	defer n.mutex.RUnlock()
+	n.lock.RLock()
+	defer n.lock.RUnlock()
 	return n.navdata, nil
 }
 
