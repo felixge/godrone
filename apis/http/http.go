@@ -118,7 +118,7 @@ func (h *HttpAPI) motors(hw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		speed, err := strconv.ParseInt(string(body), 10, 64)
+		speed, err := strconv.ParseFloat(string(body), 64)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "invalid speed: %s\n", err)
@@ -130,7 +130,7 @@ func (h *HttpAPI) motors(hw http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			if err := h.motorboard.SetSpeed(i, int(speed)); err != nil {
+			if err := h.motorboard.SetSpeed(i, float64(speed)); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintf(w, "could not set speed: %s\n", err)
 				return
@@ -138,7 +138,7 @@ func (h *HttpAPI) motors(hw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	speeds := make(map[string]int, h.motorboard.MotorCount())
+	speeds := make(map[string]float64, h.motorboard.MotorCount())
 	for i := 0; i < h.motorboard.MotorCount(); i++ {
 		if !allMotors && i != motorId {
 			continue

@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const PWM_MAX = float64(511)
+
 type Motorboard struct {
 	file        *os.File
 	pwms        [4]int
@@ -78,7 +80,7 @@ func (m *Motorboard) SetLeds(color LedColor) {
 	m.ledsChanged = true
 }
 
-func (m *Motorboard) Speed(motorId int) (int, error) {
+func (m *Motorboard) Speed(motorId int) (float64, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -86,10 +88,10 @@ func (m *Motorboard) Speed(motorId int) (int, error) {
 		return 0, fmt.Errorf("unknown motor: %d", motorId)
 	}
 
-	return m.pwms[motorId], nil
+	return float64(m.pwms[motorId]) / PWM_MAX, nil
 }
 
-func (m *Motorboard) SetSpeed(motorId int, speed int) error {
+func (m *Motorboard) SetSpeed(motorId int, speed float64) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -97,7 +99,7 @@ func (m *Motorboard) SetSpeed(motorId int, speed int) error {
 		return fmt.Errorf("unknown motor: %d", motorId)
 	}
 
-	m.pwms[motorId] = speed
+	m.pwms[motorId] = int(speed * PWM_MAX)
 	return nil
 }
 
