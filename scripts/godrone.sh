@@ -1,6 +1,6 @@
 #!/bin/sh
-# godrone.deploy.sh takes care of deploying / starting a new godrone build on
-# the drone.
+# godrone.sh kills the Parrot firmware (if neccessary) and launches the next
+# godrone.next binary.
 set -eu
 
 bin="${1}"
