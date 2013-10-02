@@ -2,8 +2,6 @@
 package log
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -104,13 +102,8 @@ func (l *logger) Debug(format string, args ...interface{}) {
 }
 
 func (l *logger) logError(lvl level, format string, args ...interface{}) error {
-	now := time.Now()
-	if lvl <= l.level {
-		l.fprintf(l.writer, now, lvl, format, args...)
-	}
-	var b bytes.Buffer
-	l.fprintf(&b, now, lvl, format, args...)
-	return errors.New(b.String())
+	l.log(lvl, format, args...)
+	return fmt.Errorf(format, args...)
 }
 
 func (l *logger) log(lvl level, format string, args ...interface{}) {
@@ -118,12 +111,10 @@ func (l *logger) log(lvl level, format string, args ...interface{}) {
 		return
 	}
 
-	l.fprintf(l.writer, time.Now(), lvl, format, args...)
-}
-
-func (l *logger) fprintf(w io.Writer, t time.Time, lvl level, format string, args ...interface{}) {
-	format = fmt.Sprintf("%s [%s] %s\n", t.Format(l.timeFormat), levels[lvl], format)
-	if _, err := fmt.Fprintf(w, format, args...); err != nil {
-		fmt.Printf("log error: %s: could not write to: %#v", err, w)
+	t := time.Now()
+	msg := fmt.Sprintf(format, args...)
+	msg = fmt.Sprintf("%s [%s] %s\n", t.Format(l.timeFormat), levels[lvl], msg)
+	if _, err := io.WriteString(l.writer, msg); err != nil {
+		fmt.Printf("log error: %s: could not write to: %#v", err, l.writer)
 	}
 }
