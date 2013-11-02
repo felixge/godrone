@@ -11,93 +11,44 @@ $(function() {
   socket.onmessage = function(e) {
     count++;
     navdata = JSON.parse(e.data);
+    navdata.Received = Date.now();
   };
 
   var lastHz = Date.now();
   setInterval(function() {
-    console.log('navdata rate: %s hz', count/((lastHz-Date.now())/1000), navdata);
+    console.log('navdata rate: %s hz', count/((lastHz-Date.now())/1000), navdata, min, max);
     count = 0;
     lastHz = Date.now();
   }, 1000);
 
-  //
-  // We use an inline data source in the example, usually data would
-  // be fetched from a server
+  var smoothie = new SmoothieChart({millisPerPixel: 1,minValue:500, maxValue:4000});
+  smoothie.streamTo(document.getElementById('sensors'));
 
-  var totalPoints = 300, scale = 100;
-  var fields = {};
-
-  function getNavdata(fieldName) {
-    var val = (navdata)
-      ? navdata[fieldName]
-      : 0;
-
-    var field = fields[fieldName];
-    if (!field) {
-      field = fields[fieldName] = {min: 0, max: 0, data: []}
-    }
-
-    if (val < field.min) {
-      field.min = val;
-    }
-    if (val > field.max) {
-      field.max = val;
-    }
-
-    if (field.data.length == 0) {
-      for (var i = 0; i < totalPoints; i++) {
-        field.data.push(0);
-      }
-    }
-
-    scaled = ((val - field.min) / (field.max - field.min)) * scale;
-
-    field.data.shift();
-    field.data.push(scaled);
-
-    // Zip the generated y values with the x values
-
-    var res = [];
-    for (var i = 0; i < field.data.length; ++i) {
-      res.push([i, field.data[i]])
-    }
-
-    return {
-      data: res,
-      label: fieldName,
-    };
-  }
-
-  function getPlots() {
-    return [
-      getNavdata('Gx'),
-    getNavdata('Gy'),
-    getNavdata('Gz'),
-    getNavdata('Ax'),
-    getNavdata('Ay'),
-    getNavdata('Az'),
-    ];
-  }
-
-  var plot = $.plot("#plot", getPlots(), {
-    series: {
-      shadowSize: 0,
-    },
-      yaxis: {
-        min: 0,
-        max: scale
-      },
-      xaxis: {
-        show: false
-      }
+  var sensors = ['Az'];
+  var lines = {};
+  sensors.forEach(function(sensor) {
+    var line = new TimeSeries();
+    smoothie.addTimeSeries(line);
+    lines[sensor] = line;
   });
 
+  var min = undefined;
+  var max = undefined;
+
   function update() {
-    plot.setData(getPlots());
+    if (navdata) {
+      sensors.forEach(function(sensor) {
+        var val = navdata[sensor];
+        if (min === undefined || val < min) {
+          min = val;
+        }
+        if (max === undefined || val > max) {
+          max = val;
+        }
+        lines[sensor].append(navdata.Received, val)
+      });
+    }
 
-    // Since the axes don't change, we don't need to call plot.setupGrid()
-
-    plot.draw();
     requestAnimationFrame(update);
   }
 
