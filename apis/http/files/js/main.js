@@ -15,7 +15,7 @@ $(function() {
 
   var lastHz = Date.now();
   setInterval(function() {
-    console.log('navdata rate: %s hz', count/((lastHz-Date.now())/1000), navdata);
+    console.log('navdata rate: %s hz', count/((lastHz-Date.now())/1000), navdata, fields);
     count = 0;
     lastHz = Date.now();
   }, 1000);
@@ -28,19 +28,26 @@ $(function() {
   var fields = {};
 
   function getNavdata(fieldName) {
-    var val = (navdata)
-      ? navdata[fieldName]
-      : 0;
+    var val = navdata[fieldName];
 
     var field = fields[fieldName];
     if (!field) {
-      field = fields[fieldName] = {min: 0, max: 0, data: []}
+      var defaultMin, defaultMax;
+      if (/^A/.test(fieldName)) {
+        defaultMin = 0;
+        defaultMax = 4096;
+      } else if (/^G/.test(fieldName)) {
+        defaultMin = -10*1000;
+        defaultMax = 10*1000;
+      }
+
+      field = fields[fieldName] = {min: defaultMin, max: defaultMax, data: []}
     }
 
-    if (val < field.min) {
+    if (field.min === undefined || val < field.min) {
       field.min = val;
     }
-    if (val > field.max) {
+    if (field.max === undefined || val > field.max) {
       field.max = val;
     }
 
@@ -71,33 +78,36 @@ $(function() {
   function getPlots() {
     return [
       getNavdata('Gx'),
-    getNavdata('Gy'),
-    getNavdata('Gz'),
-    getNavdata('Ax'),
-    getNavdata('Ay'),
-    getNavdata('Az'),
+      getNavdata('Gy'),
+      getNavdata('Gz'),
+      getNavdata('Ax'),
+      getNavdata('Ay'),
+      getNavdata('Az'),
     ];
   }
 
-  var plot = $.plot("#plot", getPlots(), {
-    series: {
-      shadowSize: 0,
-    },
-      yaxis: {
-        min: 0,
-        max: scale
-      },
-      xaxis: {
-        show: false
-      }
-  });
+  var plot;
 
   function update() {
-    plot.setData(getPlots());
+    if (navdata) {
+      if (!plot) {
+        plot = $.plot("#plot", getPlots(), {
+          series: {
+            shadowSize: 0,
+          },
+          yaxis: {
+            min: 0,
+            max: scale
+          },
+          xaxis: {
+            show: false
+          }
+        });
+      }
 
-    // Since the axes don't change, we don't need to call plot.setupGrid()
-
-    plot.draw();
+      plot.setData(getPlots());
+      plot.draw();
+    }
     requestAnimationFrame(update);
   }
 
