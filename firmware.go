@@ -1,8 +1,9 @@
 package godrone
 
 import (
-	"github.com/felixge/godrone/apis/http"
-	"github.com/felixge/godrone/drivers"
+	//"github.com/felixge/godrone/apis/http"
+	"github.com/felixge/godrone/controller/drivers"
+	"github.com/felixge/godrone/controller"
 	"github.com/felixge/godrone/log"
 	"os"
 	"time"
@@ -33,33 +34,21 @@ func NewFirmware(c Config) (*Firmware, error) {
 	}
 	log.Debug("Initialized navboard, took: %s", time.Since(lap))
 
-	lap = time.Now()
-	log.Debug("Initializing http api on port: %d", c.HttpAPIPort)
-	httpApi, err := http.NewHttpAPI(c.HttpAPIPort, motorboard, navboard, log)
-	if err != nil {
-		return nil, log.Emergency("Could not initialize http api: %s", err)
-	}
-	log.Debug("Initialized http api, took: %s", time.Since(lap))
+	//lap = time.Now()
+	//log.Debug("Initializing http api on port: %d", c.HttpAPIPort)
+	//httpApi, err := http.NewHttpAPI(c.HttpAPIPort, , log)
+	//if err != nil {
+		//return nil, log.Emergency("Could not initialize http api: %s", err)
+	//}
+	//log.Debug("Initialized http api, took: %s", time.Since(lap))
 
-	leds := motorboard.Leds()
-	for i := 0; i < 20; i++ {
-		for l, _ := range leds {
-			if i % 2 == 0 {
-				leds[l] = drivers.LedOff
-			} else {
-				leds[l] = drivers.LedGreen
-			}
-		}
-		motorboard.SetLeds(leds)
-		time.Sleep(50 * time.Millisecond)
-	}
 
 	firmware := &Firmware{
 		config:     &c,
 		log:        log,
-		navboard:   navboard,
-		motorboard: motorboard,
-		httpApi:    httpApi,
+		//navboard:   navboard,
+		//motorboard: motorboard,
+		//httpApi:    httpApi,
 	}
 	log.Info("Initialized firmware, took: %s", time.Since(start))
 	return firmware, nil
@@ -68,9 +57,9 @@ func NewFirmware(c Config) (*Firmware, error) {
 type Firmware struct {
 	config     *Config
 	log        log.Logger
-	navboard   *drivers.Navboard
-	motorboard *drivers.Motorboard
-	httpApi    *http.HttpAPI
+	//navboard   *drivers.Navboard
+	//motorboard *drivers.Motorboard
+	//httpApi    *http.HttpAPI
 }
 
 func (f *Firmware) Run() error {

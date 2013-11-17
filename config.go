@@ -8,6 +8,7 @@ var DefaultConfig = Config{
 	HttpAPIPort:   80,
 }
 
+// @TODO embedd controller config
 type Config struct {
 	LogLevel      string
 	LogTimeFormat string
