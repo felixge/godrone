@@ -5,4 +5,4 @@ import (
 	l "github.com/felixge/log"
 )
 
-type Interface l.Interface 
+type Interface l.Interface
