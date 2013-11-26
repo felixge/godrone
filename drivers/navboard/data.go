@@ -5,14 +5,14 @@ type Data struct {
 	Seq uint16
 
 	// Accelerometers
-	Ax int16
-	Ay int16
-	Az int16
+	Ax uint16
+	Ay uint16
+	Az uint16
 
 	// Gyroscopes
-	Gx int16
-	Gy int16
-	Gz int16
+	Gx uint16
+	Gy uint16
+	Gz uint16
 
 	// Everything below has not been confirmed to be correct yet
 	TemperatureAcc  uint16

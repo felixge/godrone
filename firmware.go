@@ -47,7 +47,11 @@ func (f *Firmware) start(cmd startCmd) {
 		return
 	}
 
-	go f.navboardLoop()
+	if err := f.navboard.Calibrate(); err != nil {
+		cmd<-err
+		return
+	}
+	//go f.navboardLoop()
 
 	f.started = true
 	f.log.Info("Started firmware")
