@@ -11,9 +11,6 @@ echo "--> Fetching dependencies ..."
 go get "${pkg_path}"
 go get "github.com/felixge/makefs"
 
-echo "--> Building http files ..."
-go run "${scripts_dir}/http_files.go"
-
 echo "--> Compiling arm binary ..."
 env \
   GOOS=linux \
