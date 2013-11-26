@@ -2,17 +2,21 @@ package main
 
 import (
 	"github.com/felixge/godrone"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	// Initialize firmware
-	firmware, err := godrone.NewFirmware(godrone.DefaultConfig)
-	if err != nil {
+	log := godrone.DefaultConfig.Log
+	firmware := godrone.DefaultFirmware
+	if err := firmware.Start(); err != nil {
 		panic(err)
 	}
 
-	// Run the firmware
-	if err := firmware.Run(); err != nil {
-		panic(err)
-	}
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT)
+	sig := <-sigCh
+	log.Info("Received signal=%s, shutting down", sig)
+	defer firmware.Stop()
 }
