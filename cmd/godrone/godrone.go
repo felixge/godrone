@@ -13,10 +13,10 @@ func main() {
 	if err := firmware.Start(); err != nil {
 		panic(err)
 	}
+	defer firmware.Stop()
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT)
 	sig := <-sigCh
 	log.Info("Received signal=%s, shutting down", sig)
-	defer firmware.Stop()
 }

@@ -5,6 +5,5 @@ set script [lindex $argv 2]
 
 spawn telnet $ip
 expect -re .*#
-send "sh /data/video/$script $bin\n"
-set timeout -1
-expect -re .*#
+send "sh /data/video/$script $bin; exit\n"
+interact

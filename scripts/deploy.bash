@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
 set -eu
 
-scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-pkg_path="github.com/felixge/godrone/cmd"
-bin_name="godrone"
-script_name="${bin_name}.sh"
-drone_ip="${1:-192.168.1.1}"
+readonly cmd="${1:-godrone}"
+readonly scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+readonly dir="$( cd "${scripts_dir}"/.. && pwd )"
+readonly pkg_path="github.com/felixge/godrone/cmd/${cmd}"
+readonly drone_ip="192.168.1.1"
+readonly startup_script="start.sh"
 
 echo "--> Fetching dependencies ..."
 go get "${pkg_path}"
-go get "github.com/felixge/makefs"
 
 echo "--> Compiling arm binary ..."
 env \
   GOOS=linux \
   GOARCH=arm \
   CGO_ENABLED=0 \
-  go build -o "${scripts_dir}/${bin_name}" "${pkg_path}"
+  go build -o "${cmd}" "${pkg_path}"
 
 echo "--> Uploading via ftp ..."
 curl \
-  -T "${scripts_dir}/${script_name}" "ftp://@${drone_ip}/${script_name}" \
-  -T "${scripts_dir}/${bin_name}" "ftp://@${drone_ip}/${bin_name}.next"
+  -T "${scripts_dir}/${startup_script}" "ftp://@${drone_ip}/${startup_script}" \
+  -T "${cmd}" "ftp://@${drone_ip}/${cmd}.next"
+
+rm -rf "${cmd}"
 
 echo "--> Starting godrone ..."
-"${scripts_dir}/deploy.expect" "${drone_ip}" "${bin_name}" "${script_name}"
+"${scripts_dir}/start.expect" "${drone_ip}" "${cmd}" "${startup_script}"

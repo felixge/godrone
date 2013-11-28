@@ -4,7 +4,6 @@ import (
 	"github.com/felixge/godrone/log"
 	"os"
 	"syscall"
-	"time"
 )
 
 const (
