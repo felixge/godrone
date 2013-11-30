@@ -31,7 +31,7 @@ func (r *Reader) NextData() (raw RawData, err error) {
 			break
 		}
 		if skipped > expected {
-			err = fmt.Errorf("Bad payload. length=%d expected=%d", length, expected)
+			err = fmt.Errorf("Failed to find payload.")
 			return
 		}
 		skipped += binary.Size(length)
