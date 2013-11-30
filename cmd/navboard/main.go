@@ -16,6 +16,7 @@ func main() {
 	//if err := navboard.Calibrate(); err != nil {
 	//panic(err)
 	//}
+	defer navboard.Close()
 
 	go debug()
 

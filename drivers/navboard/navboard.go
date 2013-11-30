@@ -28,7 +28,7 @@ type Navboard struct {
 func (n *Navboard) NextData() (data Data, err error) {
 	defer func() {
 		if err != nil {
-			n.close()
+			n.Close()
 		}
 	}()
 
@@ -120,12 +120,13 @@ func (n *Navboard) open() (err error) {
 	return
 }
 
-func (n *Navboard) close() {
+func (n *Navboard) Close() (err error) {
 	n.log.Debug("Closing tty=%s", n.tty)
 	if n.file != nil {
-		n.file.Close()
+		err = n.file.Close()
 	}
 	n.file = nil
 	n.reader = nil
 	n.writer = nil
+	return
 }
