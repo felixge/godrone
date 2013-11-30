@@ -1,9 +1,11 @@
 #!/usr/bin/env expect -f
 set ip [lindex $argv 0]
-set bin [lindex $argv 1]
-set script [lindex $argv 2]
+set script [lindex $argv 1]
+set cmd [lindex $argv 2]
+set envargs [lindex $argv 3]
+set prompt "# *$"
 
 spawn telnet $ip
-expect -re .*#
-send "sh /data/video/$script $bin; exit\n"
+expect -re $prompt
+send "sh /data/video/$script \"$cmd\" \"$envargs\"; exit\n"
 interact

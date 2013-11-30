@@ -5,11 +5,12 @@
 set -eu
 
 readonly cmd="${1}"
+readonly envargs="${2}"
 
 # avoid restarts
 touch /tmp/.norespawn
 # @todo inject godrone/navboard
-killall -9 program.elf godrone navboard "${cmd}" || true
+killall -9 program.elf $cmd 2> /dev/null || true
 
 cd /data/video
 
@@ -21,4 +22,4 @@ chmod +x "${cmd}"
 # to turn the bottom LED red.
 gpio 181 -d ho 1
 
-GOGCTRACE=1 exec "./${cmd}"
+exec env $envargs "./${cmd}"

@@ -7,6 +7,7 @@ readonly dir="$( cd "${scripts_dir}"/.. && pwd )"
 readonly pkg_path="github.com/felixge/godrone/cmd/${cmd}"
 readonly drone_ip="192.168.1.1"
 readonly startup_script="start.sh"
+readonly envargs="GOGCTRACE=1"
 
 echo "--> Fetching dependencies ..."
 go get "${pkg_path}"
@@ -26,4 +27,8 @@ curl \
 rm -rf "${cmd}"
 
 echo "--> Starting godrone ..."
-"${scripts_dir}/start.expect" "${drone_ip}" "${cmd}" "${startup_script}"
+"${scripts_dir}/start.expect" \
+  "${drone_ip}" \
+  "${startup_script}" \
+  "${cmd}" \
+  "${envargs}"
