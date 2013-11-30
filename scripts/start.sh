@@ -4,18 +4,16 @@
 # up the desired program.
 set -eu
 
-readonly cmd="${1}"
-readonly envargs="${2}"
+readonly cmd="$1"
+readonly envargs="$2"
 
 # avoid restarts
 touch /tmp/.norespawn
-# @todo inject godrone/navboard
-killall -9 program.elf $cmd 2> /dev/null || true
+
+killall -9 program.elf "${cmd}" 2> /dev/null || true
 
 cd /data/video
 
-rm -f "${cmd}"
-mv "${cmd}.next" "${cmd}"
 chmod +x "${cmd}"
 
 # Taken from /bin/program.elf.respawner.sh. Not sure why/if it is needed, seems
