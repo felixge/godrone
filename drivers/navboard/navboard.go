@@ -3,7 +3,6 @@ package navboard
 import (
 	"github.com/felixge/godrone/log"
 	"os"
-	"syscall"
 )
 
 const (
@@ -37,7 +36,7 @@ func (n *Navboard) NextData() (data Data, err error) {
 		return
 	}
 
-	if data, err = n.reader.NextData(); err != nil {
+	if data.Raw, err = n.reader.NextData(); err != nil {
 		n.log.Error("Failed to read data. err=%s", err)
 	} else {
 		//n.log.Debug("Read data=%+v", data)
@@ -59,45 +58,41 @@ type calibration struct {
 }
 
 func (n *Navboard) Calibrate() error {
-	var (
-		duration = 3 * time.Second
-		start    = time.Now()
-		calib    calibration
-	)
-	n.log.Info("Calibrating. duration=%s", duration)
-	for time.Since(start) <= duration {
-		data, err := n.NextData()
-		if err != nil {
-			continue
-		}
-
-		calib.Samples++
-
-		calib.Ax0 += int64(data.Ax)
-		calib.Ay0 += int64(data.Ay)
-		calib.Az0 += int64(data.Az)
-
-		calib.Gx0 += int64(data.Gx)
-		calib.Gy0 += int64(data.Gy)
-		calib.Gz0 += int64(data.Gz)
-	}
-
-	if calib.Samples < Hz {
-		return n.log.Error("Failed to calibrate. samples=%d expected=%d", calib.Samples, Hz)
-	}
-
-	calib.Ax0 /= calib.Samples
-	calib.Ay0 /= calib.Samples
-	calib.Az0 /= calib.Samples
-	calib.A1G = -(calib.Az0 - (calib.Ax0+calib.Ay0)/2)
-	calib.Az0 -= calib.A1G
-
-	calib.Gx0 /= calib.Samples
-	calib.Gy0 /= calib.Samples
-	calib.Gz0 /= calib.Samples
-
-	n.log.Info("Done calibrating. calibration=%+v", calib)
 	return nil
+	//var (
+		//samples = int64(40)
+		//calib   calibration
+	//)
+	//n.log.Info("Calibrating. samples=%s", samples)
+	//for calib.Samples < samples {
+		//data, err := n.NextData()
+		//if err != nil {
+			//continue
+		//}
+
+		//calib.Samples++
+
+		//calib.Ax0 += int64(data.Ax)
+		//calib.Ay0 += int64(data.Ay)
+		//calib.Az0 += int64(data.Az)
+
+		//calib.Gx0 += int64(data.Gx)
+		//calib.Gy0 += int64(data.Gy)
+		//calib.Gz0 += int64(data.Gz)
+	//}
+
+	//calib.Ax0 /= calib.Samples
+	//calib.Ay0 /= calib.Samples
+	//calib.Az0 /= calib.Samples
+	//calib.A1G = -(calib.Az0 - (calib.Ax0+calib.Ay0)/2)
+	//calib.Az0 -= calib.A1G
+
+	//calib.Gx0 /= calib.Samples
+	//calib.Gy0 /= calib.Samples
+	//calib.Gz0 /= calib.Samples
+
+	//n.log.Info("Done calibrating. calibration=%+v", calib)
+	//return nil
 }
 
 func (n *Navboard) open() (err error) {
@@ -117,22 +112,6 @@ func (n *Navboard) open() (err error) {
 	}
 	n.writer = NewWriter(n.file)
 	n.reader = NewReader(n.file)
-	n.log.Debug("Writing stop command")
-	if err = n.writer.WriteCommand(Stop); err != nil {
-		return
-	}
-	n.log.Debug("Setting O_NONBLOCK")
-	if _, err = n.fcntl(syscall.F_SETFL, syscall.O_NONBLOCK); err != nil {
-		return
-	}
-	n.log.Debug("Draining tty")
-	if err = n.reader.Drain(); err != nil {
-		return
-	}
-	n.log.Debug("Setting O_ASYNC")
-	if _, err = n.fcntl(syscall.F_SETFL, syscall.O_ASYNC); err != nil {
-		return
-	}
 	n.log.Debug("Writing start command")
 	if err = n.writer.WriteCommand(Start); err != nil {
 		return
@@ -149,17 +128,4 @@ func (n *Navboard) close() {
 	n.file = nil
 	n.reader = nil
 	n.writer = nil
-}
-
-func (n *Navboard) fcntl(cmd int, arg int) (val int, err error) {
-	return fcntl(n.file.Fd(), cmd, arg)
-}
-
-func fcntl(fd uintptr, cmd int, arg int) (val int, err error) {
-	v, _, e := syscall.Syscall(syscall.SYS_FCNTL, fd, uintptr(cmd), uintptr(arg))
-	val = int(v)
-	if e != 0 {
-		err = e
-	}
-	return val, err
 }

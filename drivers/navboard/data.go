@@ -1,7 +1,12 @@
 package navboard
 
+type Data struct{
+	Raw RawData
+}
+
+
 // From https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
-type Data struct {
+type RawData struct {
 	Seq uint16
 
 	// Accelerometers
@@ -10,9 +15,9 @@ type Data struct {
 	Az uint16
 
 	// Gyroscopes
-	Gx uint16
-	Gy uint16
-	Gz uint16
+	Gx int16
+	Gy int16
+	Gz int16
 
 	// Everything below has not been confirmed to be correct yet
 	TemperatureAcc  uint16

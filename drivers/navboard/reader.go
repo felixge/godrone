@@ -2,12 +2,9 @@ package navboard
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
-	"syscall"
 )
 
 func NewReader(reader io.Reader) *Reader {
@@ -20,25 +17,25 @@ type Reader struct {
 	bufReader *bufio.Reader
 }
 
-func (r *Reader) Drain() (err error) {
-	_, err = io.Copy(ioutil.Discard, r.bufReader)
-	if perr, ok := err.(*os.PathError); ok {
-		if perr.Err == syscall.EAGAIN {
-			err = nil
+func (r *Reader) NextData() (raw RawData, err error) {
+	var (
+		length   uint16
+		expected = binary.Size(raw)
+		skipped  int
+	)
+	for {
+		if err = binary.Read(r.bufReader, binary.LittleEndian, &length); err != nil {
+			return
 		}
+		if int(length) == expected {
+			break
+		}
+		if skipped > expected {
+			err = fmt.Errorf("Bad payload. length=%d expected=%d", length, expected)
+			return
+		}
+		skipped += binary.Size(length)
 	}
-	return
-}
-
-func (r *Reader) NextData() (data Data, err error) {
-	var payloadLength uint16
-	if err = binary.Read(r.bufReader, binary.LittleEndian, &payloadLength); err != nil {
-		return
-	}
-	payload := bytes.NewBuffer(make([]byte, 0, payloadLength))
-	if _, err = io.CopyN(payload, r.bufReader, int64(payloadLength)); err != nil {
-		return
-	}
-	err = binary.Read(payload, binary.LittleEndian, &data)
+	err = binary.Read(r.bufReader, binary.LittleEndian, &raw)
 	return
 }
