@@ -7,9 +7,9 @@ set -eu
 readonly cmd="$1"
 readonly envargs="$2"
 
-# avoid restarts
+# avoid parrot firmware from restarting restarts
 touch /tmp/.norespawn
-
+# kill parrot firmware and the cmd we're deploying if it's running
 killall -9 program.elf "${cmd}" 2> /dev/null || true
 
 cd /data/video

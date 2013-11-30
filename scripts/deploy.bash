@@ -2,7 +2,12 @@
 set -eu
 
 usage() {
-  echo "Usage: $0"
+  local exitcode="$1"
+  if [[ "$exitcode" = 1 ]]; then
+    exec 1>&2
+  fi
+  echo "Usage: $0 [-h] [--tracegc] [-i <ip>] [-e <envargs>] [<cmd>]"
+  exit "$exitcode"
 }
 
 log() {
@@ -32,7 +37,7 @@ upload() {
     curlcmd=" ${curlcmd} -T '${file}' 'ftp://@${ip}/$(basename "${file}")'"
   done
 
-  log 'Uploading via ftp ...'
+  log "Uploading to ${ip}..."
   bash -c "${curlcmd}"
 }
 
@@ -41,13 +46,48 @@ clean() {
 }
 
 main() {
+  local ip="192.168.1.1"
+  local envargs=''
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+      '-h')
+        usage 0
+        shift
+        ;;
+      '-i')
+        ip="$2"
+        shift
+        ;;
+      '--tracegc')
+        envargs="${envargs} GOGCTRACE=1"
+        ;;
+      '-e')
+        envargs="${envargs} $2"
+        shift
+        ;;
+       -*)
+         echo -e "unknown option: $1\n" 1>&2
+         usage 1
+         ;;
+       *)
+         break
+         ;;
+    esac
+    shift
+  done
+  readonly ip
+  readonly envargs
+
+  if [[ "$#" -gt 1 ]]; then
+    echo -e "unexpected argument: $2\n" 1>&2
+    usage 1
+  fi
+
   local readonly cmd="${1:-godrone}"
   local readonly scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   local readonly dir="$( cd "${scripts_dir}"/.. && pwd )"
   local readonly pkg_path="github.com/felixge/godrone/cmd/${cmd}"
-  local readonly ip='192.168.1.1'
   local readonly startup_script='start.sh'
-  local readonly envargs='GOGCTRACE=1'
 
   fetch_deps "${pkg_path}"
   build "${pkg_path}" "${cmd}"
