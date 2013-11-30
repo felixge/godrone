@@ -1,6 +1,6 @@
 #!/bin/sh
 # This script kills any previously running control program (e.g. the original
-# parrot firmware, godrone, or godrone diagnostic programs) and then starts
+# parrot firmware, godrone, or godrone diagnostic program) and then starts
 # up the desired program.
 set -eu
 
