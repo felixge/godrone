@@ -78,7 +78,7 @@ func (d Data) String() string {
 		args   = make([]interface{}, len(f))
 	)
 	for i := 0; i < len(f); i++ {
-		format[i] = Sensor(i).String() + ": %+ 9.2f"
+		format[i] = "%+ 8.2f "+Sensor(i).String()
 		args[i] = interface{}(f[i])
 	}
 	return fmt.Sprintf(strings.Join(format, " "), args...)
