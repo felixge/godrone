@@ -1,14 +1,25 @@
 package navboard
 
 import (
+	"fmt"
+	"github.com/felixge/godrone/imu"
 	"github.com/felixge/godrone/log"
+	"math"
 	"os"
 )
 
 const (
 	DefaultTTY = "/dev/ttyO1"
-	Hz         = 200
 )
+
+type ErrStdev struct {
+	stdev  float64
+	sensor string
+}
+
+func (e ErrStdev) Error() string {
+	return fmt.Sprintf("Standard deviation too high: std=%.2f sensor=%s", e.stdev, e.sensor)
+}
 
 func NewNavboard(tty string, log log.Interface) *Navboard {
 	return &Navboard{
@@ -18,11 +29,12 @@ func NewNavboard(tty string, log log.Interface) *Navboard {
 }
 
 type Navboard struct {
-	reader *Reader
-	writer *Writer
-	tty    string
-	file   *os.File
-	log    log.Interface
+	reader      *Reader
+	writer      *Writer
+	tty         string
+	file        *os.File
+	log         log.Interface
+	calibration calibration
 }
 
 func (n *Navboard) NextData() (data Data, err error) {
@@ -38,61 +50,93 @@ func (n *Navboard) NextData() (data Data, err error) {
 
 	if data.Raw, err = n.reader.NextData(); err != nil {
 		n.log.Error("Failed to read data. err=%s", err)
-	} else {
-		//n.log.Debug("Read data=%+v", data)
+		return
 	}
+
+	data.Data = data.Raw.ImuData().Sub(n.calibration.Offsets).Div(n.calibration.Gains)
+
 	return
 }
 
 type calibration struct {
-	Samples int64
-
-	Ax0 int64
-	Ay0 int64
-	Az0 int64
-	A1G int64 // Output for 1g
-
-	Gx0 int64
-	Gy0 int64
-	Gz0 int64
+	Offsets imu.Data
+	Gains   imu.Data
 }
 
 func (n *Navboard) Calibrate() error {
+	var (
+		samples                      = make([]imu.Floats, 0, 40)
+		retries                      = 100
+		sums, sqrSums, means, stdevs imu.Floats
+		names                        = []string{"Ax", "Ay", "Az", "Gx", "Gy", "Gz"}
+	)
+
+	for len(samples) < cap(samples) {
+		data, err := n.NextData()
+		if err != nil {
+			if retries <= 0 {
+				return err
+			}
+			retries--
+			continue
+		}
+
+		values := data.Raw.ImuData().Floats()
+		samples = append(samples, values)
+
+		for i, val := range values {
+			sums[i] += val
+		}
+	}
+
+	for i := 0; i < len(means); i++ {
+		means[i] = sums[i] / float64(len(samples))
+	}
+
+	for _, values := range samples {
+		for i, v := range values {
+			sqrSums[i] += (v - means[i]) * (v - means[i])
+		}
+	}
+
+	for i := 0; i < len(stdevs); i++ {
+		stdevs[i] = math.Sqrt(sqrSums[i] / float64(len(samples)))
+	}
+
+	n.log.Debug("calibration means: %#v", means)
+	n.log.Debug("calibration stdevs: %#v", stdevs)
+
+	for i, stdev := range stdevs {
+		// stddev is usually around 1 for all sensors. 10 is an empirical value
+		// that indicates there is too much sensor noise (drone is moving or
+		// sensors are going crazy).
+		if stdev > 10 {
+			return ErrStdev{stdev, names[i]}
+		}
+	}
+
+	var o, g imu.Floats
+	o = means
+
+	// The drone should sitting on a level floor at this point, so we assume that
+	// Az is measuring 1G, and we can calculate the gain for that by substracting
+	// the avg between Ax and Ay from Az. This assumes that the gain is identical
+	// for all sensors, but that's much more convenient than trying to measure
+	// the gain of each sensor individually.
+	ag := o[imu.Az] - (o[imu.Ax]+o[imu.Ay])/2
+	g[imu.Ax], g[imu.Ay], g[imu.Az] = ag, ag, ag
+	o[imu.Az] -= ag
+
+	// @TODO Figure out gains for gyroscopes
+	g[imu.Gx], g[imu.Gy], g[imu.Gz] = 1, 1, 1
+
+	n.calibration.Offsets = imu.NewData(o)
+	n.calibration.Gains = imu.NewData(g)
+
+	n.log.Debug("calibration offsets: %+v", n.calibration.Offsets)
+	n.log.Debug("calibration gains: %+v", n.calibration.Gains)
+
 	return nil
-	//var (
-		//samples = int64(40)
-		//calib   calibration
-	//)
-	//n.log.Info("Calibrating. samples=%s", samples)
-	//for calib.Samples < samples {
-		//data, err := n.NextData()
-		//if err != nil {
-			//continue
-		//}
-
-		//calib.Samples++
-
-		//calib.Ax0 += int64(data.Ax)
-		//calib.Ay0 += int64(data.Ay)
-		//calib.Az0 += int64(data.Az)
-
-		//calib.Gx0 += int64(data.Gx)
-		//calib.Gy0 += int64(data.Gy)
-		//calib.Gz0 += int64(data.Gz)
-	//}
-
-	//calib.Ax0 /= calib.Samples
-	//calib.Ay0 /= calib.Samples
-	//calib.Az0 /= calib.Samples
-	//calib.A1G = -(calib.Az0 - (calib.Ax0+calib.Ay0)/2)
-	//calib.Az0 -= calib.A1G
-
-	//calib.Gx0 /= calib.Samples
-	//calib.Gy0 /= calib.Samples
-	//calib.Gz0 /= calib.Samples
-
-	//n.log.Info("Done calibrating. calibration=%+v", calib)
-	//return nil
 }
 
 func (n *Navboard) open() (err error) {

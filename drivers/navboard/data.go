@@ -1,9 +1,13 @@
 package navboard
 
-type Data struct{
+import (
+	"github.com/felixge/godrone/imu"
+)
+
+type Data struct {
+	imu.Data
 	Raw RawData
 }
-
 
 // From https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
 type RawData struct {
@@ -49,4 +53,15 @@ type RawData struct {
 	Mz int16
 
 	Checksum uint16
+}
+
+func (r RawData) ImuData() imu.Data {
+	return imu.Data{
+		Ax: float64(r.Ax),
+		Ay: float64(r.Ay),
+		Az: float64(r.Az),
+		Gx: float64(r.Gx),
+		Gy: float64(r.Gy),
+		Gz: float64(r.Gz),
+	}
 }
