@@ -27,7 +27,7 @@ func main() {
 }
 
 func debug() {
-	c := attitude.Complementary{}
+	c := attitude.NewComplementary()
 	for {
 		data, err := navboard.NextData()
 		if err != nil {
