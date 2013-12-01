@@ -12,6 +12,14 @@ const (
 	DefaultTTY = "/dev/ttyO1"
 )
 
+// gyroGains are the measured gains for converting the gyroscope output into
+// deg/sec.
+//
+// from: /data/config.ini on drone
+// gyros_gains                    = { 1.0569232e-03 -1.0664322e-03 -1.0732636e-03 }
+var gyroGains = [3]float64{1.0569232e01, -1.0664322e01, -1.0732636e01}
+
+
 type ErrStdev struct {
 	stdev  float64
 	sensor string
@@ -124,11 +132,11 @@ func (n *Navboard) Calibrate() error {
 	// for all sensors, but that's much more convenient than trying to measure
 	// the gain of each sensor individually.
 	ag := o[imu.Az] - (o[imu.Ax]+o[imu.Ay])/2
-	g[imu.Ax], g[imu.Ay], g[imu.Az] = ag, ag, ag
+	g[imu.Ax], g[imu.Ay], g[imu.Az] = ag, ag, -ag
 	o[imu.Az] -= ag
 
 	// @TODO Figure out gains for gyroscopes
-	g[imu.Gx], g[imu.Gy], g[imu.Gz] = 1, 1, 1
+	g[imu.Gx], g[imu.Gy], g[imu.Gz] = gyroGains[0], gyroGains[1], gyroGains[2]
 
 	n.calibration.Offsets = imu.NewData(o)
 	n.calibration.Gains = imu.NewData(g)
