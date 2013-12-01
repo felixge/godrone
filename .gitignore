@@ -1,5 +1,1 @@
-/apis/http/fs.go
-/scripts/godrone
-node_modules/
-npm-debug.log
-.DS_Store
+/bin

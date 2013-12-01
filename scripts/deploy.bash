@@ -20,12 +20,15 @@ fetch_deps() {
 }
 
 build() {
-  log "Building $2 arm binary ..."
+  local pkg="$1"
+  local path="$2"
+  log "Creating ${pkg} arm binary in ${path} ..."
+  mkdir -p "$(dirname "${path}")"
   env \
     GOOS=linux \
     GOARCH=arm \
     CGO_ENABLED=0 \
-    go build -o "$2" "$1"
+    go build -o "${path}" "${pkg}"
 }
 
 upload() {
@@ -39,10 +42,6 @@ upload() {
 
   log "Uploading to ${ip}..."
   bash -c "${curlcmd}"
-}
-
-clean() {
-  rm -rf "$1"
 }
 
 main() {
@@ -86,13 +85,13 @@ main() {
   local readonly cmd="${1:-godrone}"
   local readonly scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   local readonly dir="$( cd "${scripts_dir}"/.. && pwd )"
+  local readonly bin_path="${dir}/bin/${cmd}"
   local readonly pkg_path="github.com/felixge/godrone/cmd/${cmd}"
   local readonly startup_script='start.sh'
 
   fetch_deps "${pkg_path}"
-  build "${pkg_path}" "${cmd}"
-  upload "${ip}" "${scripts_dir}/${startup_script}" "${cmd}"
-  clean "${cmd}"
+  build "${pkg_path}" "${bin_path}"
+  upload "${ip}" "${scripts_dir}/${startup_script}" "${bin_path}"
 
   log "Starting ${cmd} ..."
   "${scripts_dir}/start.expect" \
