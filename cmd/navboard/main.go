@@ -31,16 +31,6 @@ func debug() {
 		if err != nil {
 			continue
 		}
-		fmt.Printf(
-			"\rRaw: AX: %+05d AY: %+05d AZ: %+05d GX: %+05d GY: %+05d GZ: %+05d --> "+
-				"%s",
-			data.Raw.Ax,
-			data.Raw.Ay,
-			data.Raw.Az,
-			data.Raw.Gx,
-			data.Raw.Gy,
-			data.Raw.Gz,
-			data.Data.String(),
-		)
+		fmt.Printf("\r%s --> %s", data.Raw.ImuData(), data.Data)
 	}
 }
