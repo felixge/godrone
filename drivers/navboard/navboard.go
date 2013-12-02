@@ -17,8 +17,7 @@ const (
 //
 // from: /data/config.ini on drone
 // gyros_gains                    = { 1.0569232e-03 -1.0664322e-03 -1.0732636e-03 }
-var gyroGains = [3]float64{1.0569232e01, -1.0664322e01, -1.0732636e01}
-
+var gyroGains = [3]float64{16, -16, -16}
 
 type ErrStdev struct {
 	stdev  float64

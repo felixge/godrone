@@ -8,6 +8,7 @@ import (
 
 func NewComplementary() *Complementary {
 	return &Complementary{gGain: 0.98, aGain: 0.02}
+	//return &Complementary{gGain: 1, aGain: 0}
 
 }
 
