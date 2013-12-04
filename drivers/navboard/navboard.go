@@ -117,7 +117,7 @@ func (n *Navboard) Calibrate() error {
 		// stddev is usually around 1 for all sensors. 10 is an empirical value
 		// that indicates there is too much sensor noise (drone is moving or
 		// sensors are going crazy).
-		if stdev > 10 {
+		if stdev > 20 {
 			return ErrStdev{stdev, names[i]}
 		}
 	}

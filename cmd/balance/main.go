@@ -58,28 +58,31 @@ func loop(m *motorboard.Motorboard) {
 		ro := roll.Update(a.Roll / 90)
 		po := pitch.Update(a.Pitch / 90)
 		yo := yaw.Update(a.Yaw / 90) / 5
+		_ = yo
+		_ = basespeed
 
 		fmt.Printf("roll: %.2f pitch: %.2f yaw: %.2f - %s\r", ro, po, a)
 
-		speeds := [4]float64{basespeed, basespeed, basespeed, basespeed}
+		//speeds := [4]float64{basespeed, basespeed, basespeed, basespeed}
+		speeds := [4]float64{0.8, 0, 0.8, 0}
 
-		if ro > 0 {
-			speeds[0], speeds[3] = speeds[0]+ro, speeds[3]+ro
-		} else if ro < 0 {
-			speeds[1], speeds[2] = speeds[1]-ro, speeds[2]-ro
-		}
+		//if ro > 0 {
+			//speeds[0], speeds[3] = speeds[0]+ro, speeds[3]+ro
+		//} else if ro < 0 {
+			//speeds[1], speeds[2] = speeds[1]-ro, speeds[2]-ro
+		//}
 
-		if po > 0 {
-			speeds[0], speeds[1] = speeds[0]+po, speeds[1]+po
-		} else if po < 0 {
-			speeds[2], speeds[3] = speeds[2]-po, speeds[3]-po
-		}
+		//if po > 0 {
+			//speeds[0], speeds[1] = speeds[0]+po, speeds[1]+po
+		//} else if po < 0 {
+			//speeds[2], speeds[3] = speeds[2]-po, speeds[3]-po
+		//}
 
-		if yo > 0 {
-			speeds[1], speeds[3] = speeds[1]+yo, speeds[3]+yo
-		} else if yo < 0 {
-			speeds[0], speeds[2] = speeds[0]-yo, speeds[2]-yo
-		}
+		//if yo > 0 {
+			//speeds[1], speeds[3] = speeds[1]+yo, speeds[3]+yo
+		//} else if yo < 0 {
+			//speeds[0], speeds[2] = speeds[0]-yo, speeds[2]-yo
+		//}
 
 		for i, speed := range speeds {
 			m.SetSpeed(i, speed)

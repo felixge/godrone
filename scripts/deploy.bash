@@ -14,6 +14,11 @@ log() {
   echo "--> $@"
 }
 
+build_http_fs() {
+  log "Building http fs ..."
+  makefs "$1"
+}
+
 fetch_deps() {
   log 'Fetching dependencies ...'
   go get "$1"
@@ -89,6 +94,7 @@ main() {
   local readonly pkg_path="github.com/felixge/godrone/cmd/${cmd}"
   local readonly startup_script='start.sh'
 
+  build_http_fs "${dir}/http/fs"
   fetch_deps "${pkg_path}"
   build "${pkg_path}" "${bin_path}"
   upload "${ip}" "${scripts_dir}/${startup_script}" "${bin_path}"
