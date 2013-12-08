@@ -7,18 +7,18 @@ import (
 	"io"
 )
 
-func NewReader(reader io.Reader) *Reader {
-	return &Reader{
-		bufReader: bufio.NewReader(reader),
+func newReader(r io.Reader) *reader {
+	return &reader{
+		bufReader: bufio.NewReader(r),
 	}
 }
 
-type Reader struct {
+type reader struct {
 	bufReader *bufio.Reader
 }
 
 // NextData returns the next data packet or an error.
-func (r *Reader) NextData() (raw RawData, err error) {
+func (r *reader) NextData() (raw RawData, err error) {
 	var (
 		length   uint16
 		expected = binary.Size(raw)
@@ -42,7 +42,7 @@ func (r *Reader) NextData() (raw RawData, err error) {
 		if int(length) == expected {
 			break
 		}
-		if skipped > expected * 2 {
+		if skipped > expected*2 {
 			err = fmt.Errorf("Failed to find payload. skipped=%d", skipped)
 			return
 		}

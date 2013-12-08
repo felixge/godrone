@@ -15,7 +15,12 @@ Gamepad.prototype.start = function() {
 
 Gamepad.prototype._poll = function() {
   var state = navigator.webkitGetGamepads()[0];
-  if (state && this._started) {
+  if (!state) {
+    requestAnimationFrame(this._poll.bind(this));
+    return;
+  }
+
+  if (this._started) {
     console.log('Gamepad started');
     this._started.resolve();
     this._started = null;
@@ -25,5 +30,5 @@ Gamepad.prototype._poll = function() {
     this.onchange(state);
     this._timestamp = state.timestamp;
   }
-  requestAnimationFrame(this._poll.bind(this))
+  requestAnimationFrame(this._poll.bind(this));
 };

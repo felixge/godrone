@@ -5,21 +5,21 @@ import (
 	"io"
 )
 
-type Command byte
+type command byte
 
 const (
-	Start Command = 1 << iota
-	Stop
-	Resync
+	start command = 1 << iota
+	stop
+	resync
 )
 
-var commands = map[Command]string{
-	Start:  "Start",
-	Stop:   "Stop",
-	Resync: "Resync",
+var commands = map[command]string{
+	start:  "Start",
+	stop:   "Stop",
+	resync: "Resync",
 }
 
-func (c Command) String() string {
+func (c command) String() string {
 	if s, ok := commands[c]; ok {
 		return s
 	} else {
@@ -27,19 +27,19 @@ func (c Command) String() string {
 	}
 }
 
-func (c Command) Bytes() []byte {
+func (c command) Bytes() []byte {
 	return []byte{byte(c)}
 }
 
-func NewWriter(writer io.Writer) *Writer {
-	return &Writer{writer: writer}
+func newWriter(w io.Writer) *writer {
+	return &writer{w: w}
 }
 
-type Writer struct {
-	writer io.Writer
+type writer struct {
+	w io.Writer
 }
 
-func (w *Writer) WriteCommand(cmd Command) (err error) {
-	_, err = w.writer.Write(cmd.Bytes())
+func (w *writer) WriteCommand(cmd command) (err error) {
+	_, err = w.w.Write(cmd.Bytes())
 	return
 }

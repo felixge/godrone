@@ -19,15 +19,6 @@ const (
 // gyros_gains                    = { 1.0569232e-03 -1.0664322e-03 -1.0732636e-03 }
 var gyroGains = [3]float64{16, -16, -16}
 
-type ErrStdev struct {
-	stdev  float64
-	sensor string
-}
-
-func (e ErrStdev) Error() string {
-	return fmt.Sprintf("Standard deviation too high: std=%.2f sensor=%s", e.stdev, e.sensor)
-}
-
 func NewNavboard(tty string, log log.Interface) *Navboard {
 	return &Navboard{
 		tty: tty,
@@ -36,14 +27,15 @@ func NewNavboard(tty string, log log.Interface) *Navboard {
 }
 
 type Navboard struct {
-	reader      *Reader
-	writer      *Writer
+	reader      *reader
+	writer      *writer
 	tty         string
 	file        *os.File
 	log         log.Interface
 	calibration calibration
 }
 
+// @TODO Turn into ReadData, taking a pointer
 func (n *Navboard) NextData() (data Data, err error) {
 	defer func() {
 		if err != nil {
@@ -118,7 +110,7 @@ func (n *Navboard) Calibrate() error {
 		// that indicates there is too much sensor noise (drone is moving or
 		// sensors are going crazy).
 		if stdev > 20 {
-			return ErrStdev{stdev, names[i]}
+			return fmt.Errorf("Standard deviation too high: std=%.2f sensor=%s", stdev, names[i])
 		}
 	}
 
@@ -161,10 +153,10 @@ func (n *Navboard) open() (err error) {
 	if n.file, err = os.OpenFile(n.tty, os.O_RDWR, 0); err != nil {
 		return
 	}
-	n.writer = NewWriter(n.file)
-	n.reader = NewReader(n.file)
+	n.writer = newWriter(n.file)
+	n.reader = newReader(n.file)
 	n.log.Debug("Writing start command")
-	if err = n.writer.WriteCommand(Start); err != nil {
+	if err = n.writer.WriteCommand(start); err != nil {
 		return
 	}
 	n.log.Debug("Opened tty=%s", n.tty)
