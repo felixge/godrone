@@ -6,32 +6,53 @@ written in Go.
 
 ## Status
 
-Feel free to poke around the code, but don't expect much to work yet.
+This project is a work in progress, but the following things should work:
+
+* Navboard driver
+* Motorboard driver
+* Complementary flight stablization filter
+* Gamepad control via WebSocket / HTML5 Gamepad API
+* Basic flight!
 
 ## Roadmap
 
-* Navdata reader (in progress)
-* Kalman Filter
-* Motor Drivers
-* Stable Flight / Hover
-* AT protocol (enough for compatibility with node-ardrone)
-* Video protocol (enough for compatibility with FreeFlight app)
-* Http protocol
-* Fun hacks
+The following things still need to be implemented:
+
+* Ultrasound height detection
+* Battery status
+* Reset motor emergency mode
+* High level API for writing apps
+* Camera Access
+* Optical flow tracking for bottom camera / better hover stabilization
+* Kalman filter (supposedly better performance than complementary filter)
+* Parrot UDP protocol
+* Parrot TCP Video Protocol
+* JS scripting
 
 ## Motivation
 
-* Learning: A good excuse to dive into robotics algorithms.
-* Docs: Document the AR Drone hardware/software interfaces.
-* Curiosity: Can this be done in a garbage collected language?
-* Community: Non-programmers should be able to download and run this firmware.
+This project is mainly a personal challenge I set for myself.
+
+However, if it turns out well, this firmware may become a viable replacement
+for the Parrot AR Drone firmware, allowing for a few interesting use cases:
+
+* Education: Demonstrate quad copter physics, by controlling motors
+  individually.
+* Autonomy: Write autonomous drone software that requires no Wi-Fi connection /
+  client to be connected.
+* HTML client: Control the drone from the web browser of any device via HTML /
+  JS / WebSockets. No need for custom apps.
+* Acrobatics: Teach the drone new acrobatic tricks and allow for more aggresive
+  flight.
+* Hackability: Easy support for additional devices connected to the drone (GPS,
+  Sensors, Lasers, etc.)
 
 ## License
 
 This project is licensed under the AGPL v3.
 
 ```
-Copyright (C) 2013 Felix Geisendörfer & Contributors
+Copyright (C) 2013 Felix Geisendörfer
 http://felixge.de/
 
 This program is free software: you can redistribute it and/or modify
