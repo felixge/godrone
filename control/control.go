@@ -8,32 +8,37 @@ import (
 )
 
 const (
-	throttleMax = 0.85
-	adjMax      = 1 - throttleMax
+	rotationMax = 0.15
+	throttleMin = 0.5
+	throttleFly = 0.66
+	throttleMax = 1 - rotationMax
 )
 
-func NewControl(rollPID, pitchPID, yawPID [3]float64) *Control {
+func NewControl(roll, pitch, yaw, altitude [3]float64) *Control {
 	return &Control{
-		roll:  pidctrl.NewPIDController(rollPID[0], rollPID[1], rollPID[2]),
-		pitch: pidctrl.NewPIDController(pitchPID[0], pitchPID[1], pitchPID[2]),
-		yaw:   pidctrl.NewPIDController(yawPID[0], yawPID[1], yawPID[2]),
+		roll:     pidctrl.NewPIDController(roll[0], roll[1], roll[2]),
+		pitch:    pidctrl.NewPIDController(pitch[0], pitch[1], pitch[2]),
+		yaw:      pidctrl.NewPIDController(yaw[0], yaw[1], yaw[2]),
+		altitude: pidctrl.NewPIDController(altitude[0], altitude[1], altitude[2]),
 	}
 }
 
 type Control struct {
-	l                sync.Mutex
-	throttle         float64
-	roll, pitch, yaw *pidctrl.PIDController
+	l        sync.Mutex
+	roll     *pidctrl.PIDController
+	pitch    *pidctrl.PIDController
+	yaw      *pidctrl.PIDController
+	altitude *pidctrl.PIDController
 }
 
-func (c *Control) Set(s attitude.Data, throttle float64) {
+func (c *Control) Set(s attitude.Data) {
 	c.l.Lock()
 	defer c.l.Unlock()
 
 	c.roll.Set(s.Roll)
 	c.pitch.Set(s.Pitch)
 	c.yaw.Set(s.Yaw)
-	c.throttle = throttle
+	c.altitude.Set(s.Altitude)
 }
 
 func (c *Control) Update(a attitude.Data) (speeds [4]float64) {
@@ -43,20 +48,31 @@ func (c *Control) Update(a attitude.Data) (speeds [4]float64) {
 	var (
 		adjRoll  = c.roll.Update(a.Roll)
 		adjPitch = c.pitch.Update(a.Pitch)
-		//adjYaw   = c.yaw.Update(a.Yaw)
-		adjYaw   = 0.0
-		throttle = math.Min(c.throttle, 1) * throttleMax
+		adjYaw   = c.yaw.Update(a.Yaw)
+		throttle = throttleFly + c.altitude.Update(a.Altitude)
 	)
 
-	if throttle <= 0 {
+	// kill motors if we want to land and are close enough to the ground 0.30 is
+	// the min value the ultrasound can sense.
+	if c.altitude.Get() <= 0 && a.Altitude <= 0.30 {
 		return
 	}
 
+	throttle = clipToRange(throttle, throttleMin, throttleMax)
+
 	speeds = [4]float64{
-		throttle + math.Max(math.Min(+adjRoll+adjPitch+adjYaw, adjMax), -adjMax),
-		throttle + math.Max(math.Min(-adjRoll+adjPitch-adjYaw, adjMax), -adjMax),
-		throttle + math.Max(math.Min(-adjRoll-adjPitch+adjYaw, adjMax), -adjMax),
-		throttle + math.Max(math.Min(+adjRoll-adjPitch-adjYaw, adjMax), -adjMax),
+		throttle + clip(+adjRoll+adjPitch-adjYaw, rotationMax),
+		throttle + clip(-adjRoll+adjPitch+adjYaw, rotationMax),
+		throttle + clip(-adjRoll-adjPitch-adjYaw, rotationMax),
+		throttle + clip(+adjRoll-adjPitch+adjYaw, rotationMax),
 	}
 	return
+}
+
+func clip(val, max float64) float64 {
+	return math.Max(math.Min(val, max), -max)
+}
+
+func clipToRange(val, min, max float64) float64 {
+	return math.Min(math.Max(val, min), max)
 }

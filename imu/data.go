@@ -35,6 +35,7 @@ type Floats [Sensors]float64
 type Data struct {
 	Ax, Ay, Az float64
 	Gx, Gy, Gz float64
+	UsAltitude  float64
 }
 
 func NewData(f Floats) (d Data) {
@@ -78,7 +79,7 @@ func (d Data) String() string {
 		args   = make([]interface{}, len(f))
 	)
 	for i := 0; i < len(f); i++ {
-		format[i] = "%+ 8.2f "+Sensor(i).String()
+		format[i] = "%+ 8.2f " + Sensor(i).String()
 		args[i] = interface{}(f[i])
 	}
 	return fmt.Sprintf(strings.Join(format, " "), args...)

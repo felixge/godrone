@@ -39,6 +39,7 @@ func (c *Complementary) Update(d imu.Data) Data {
 
 	c.data.Pitch = c.data.Pitch*c.gGain + a.Pitch*c.aGain
 	c.data.Roll = c.data.Roll*c.gGain + a.Roll*c.aGain
+	c.data.Altitude = d.UsAltitude
 
 	c.updated = now
 	return c.data

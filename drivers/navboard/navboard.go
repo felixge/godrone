@@ -53,6 +53,11 @@ func (n *Navboard) NextData() (data Data, err error) {
 	}
 
 	data.Data = data.Raw.ImuData().Sub(n.calibration.Offsets).Div(n.calibration.Gains)
+	// taken from ardrone project, could not find out the sensor model / verify
+	// the details on this yet. It also seems like the minimum value is always
+	// 30cm.
+	// see https://github.com/ardrone/ardrone/blob/master/ardrone/navboard/navboard.c#L107
+	data.Data.UsAltitude = float64(data.Raw.Ultrasound&0x7fff) * 0.000340
 
 	return
 }

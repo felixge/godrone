@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/felixge/godrone/attitude"
 	"github.com/felixge/godrone/control"
 	"github.com/felixge/godrone/drivers/motorboard"
@@ -20,11 +21,12 @@ type Config struct {
 	RollPID       [3]float64
 	PitchPID      [3]float64
 	YawPID        [3]float64
+	AltitudePID   [3]float64
 	HttpAddr      string
 }
 
 var (
-	defaultRollPitchPID = [3]float64{0.02, 0, 0}
+	defaultRollPitchPID = [3]float64{0.04, 0, 0.002}
 
 	green  = motorboard.Leds(motorboard.LedGreen)
 	orange = motorboard.Leds(motorboard.LedOrange)
@@ -36,7 +38,8 @@ var DefaultConfig = Config{
 	MotorboardTTY: "/dev/ttyO0",
 	RollPID:       defaultRollPitchPID,
 	PitchPID:      defaultRollPitchPID,
-	YawPID:        [3]float64{1, 0, 0},
+	YawPID:        [3]float64{0.04, 0, 0}, // disabled, needs magnotometer to work well
+	AltitudePID:   [3]float64{0.3, 0.03, 0.03},
 	HttpAddr:      ":80",
 }
 
@@ -84,6 +87,7 @@ mainLoop:
 		select {
 		case navData := <-navDataCh:
 			attitudeData := i.attitude.Update(navData.Data)
+			fmt.Printf("%s\r", attitudeData)
 			motorSpeeds := i.control.Update(attitudeData)
 			if err := i.motorboard.SetSpeeds(motorSpeeds); err != nil {
 				i.log.Error("Could not set motor speeds. err=%s", err)
@@ -116,7 +120,7 @@ func NewInstances(c Config) (i Instances, err error) {
 		return
 	}
 	i.attitude = attitude.NewComplementary()
-	i.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID)
+	i.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID, c.AltitudePID)
 	i.http = http.NewHandler(i.control, i.log)
 	return
 }

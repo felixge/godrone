@@ -27,7 +27,7 @@ type RawData struct {
 	TemperatureAcc  uint16
 	TemperatureGyro uint16
 
-	Ultrasound uint16
+	Ultrasound int16
 
 	UsDebutEcho       uint16
 	UsFinEcho         uint16

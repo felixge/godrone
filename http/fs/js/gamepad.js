@@ -26,9 +26,9 @@ Gamepad.prototype._poll = function() {
     this._started = null;
   }
 
-  if (state.timestamp !== this._timestamp) {
+  //if (state.timestamp !== this._timestamp) {
     this.onchange(state);
-    this._timestamp = state.timestamp;
-  }
+    //this._timestamp = state.timestamp;
+  //}
   requestAnimationFrame(this._poll.bind(this));
 };

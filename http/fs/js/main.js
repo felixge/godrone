@@ -6,18 +6,19 @@ var gamepad = new Gamepad();
 (function main() {
   $.when(connection.start(), gamepad.start()).then(function() {
     gamepad.onchange = function(state) {
-      var throttle = Math.max(-filter(state.axes[3]), 0);
-      if (state.buttons[0]) {
-        throttle = 0.5;
-      }
+      //var throttle = Math.max(-filter(state.axes[3]), 0);
+      ////console.log(state.buttons);
+      //if (state.buttons[0]) {
+        //throttle = 0.5;
+      //}
 
       var control = {
         Pitch: filter(state.axes[1])*6,
         Roll: filter(state.axes[0])*6,
         Yaw: filter(state.axes[2])*6,
-        Throttle: throttle,
+        Altitude: filter(-state.axes[3]),
       }
-      console.log(state.axes, control);
+      //console.log(state.axes, control);
       connection.send(control);
     };
   }, function() {
