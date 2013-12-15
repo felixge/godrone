@@ -1,3 +1,7 @@
+// Package http implements the HTTP interface for GoDrone.
+//
+// It currently handles serving the HTML UI and related assets, as well as
+// WebSocket clients.
 package http
 
 import (
