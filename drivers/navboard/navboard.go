@@ -154,7 +154,7 @@ func (n *Navboard) open() (err error) {
 		return
 	}
 
-	n.log.Info("Opening tty=%s", n.tty)
+	n.log.Debug("Opening tty=%s", n.tty)
 	if n.file, err = os.OpenFile(n.tty, os.O_RDWR, 0); err != nil {
 		return
 	}
