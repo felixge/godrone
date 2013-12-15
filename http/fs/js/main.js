@@ -113,9 +113,12 @@
           >
             <p>
               Only tested with <a href="http://goo.gl/OaDB9J">this</a> gamepad
-              right now, but should work with others. B0 (X) square toggles
-              the motors on/off. Right joystick controls throttle, left joystick
-              controls movement. There is no rotation yet.
+              right now, but should work with others. B0 (X) square toggles the
+              motors on/off. Right joystick controls throttle, left joystick
+              controls movement. There is no rotation yet. You may also
+              experience buttons that keep toggling as you hold them down, in
+              this case reconnect your controller. It seems to be a Gamepad API
+              issue.
             </p>
           </Table>
           <Table
