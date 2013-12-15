@@ -1,0 +1,12 @@
+.vertical th{
+  text-align: left;
+}
+
+.horizontal th{
+  width: 100px;
+  text-align: right;
+}
+
+.horizontal td{
+  text-align: right;
+}

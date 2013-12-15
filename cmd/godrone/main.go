@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/felixge/godrone/attitude"
 	"github.com/felixge/godrone/control"
 	"github.com/felixge/godrone/drivers/motorboard"
@@ -49,7 +48,7 @@ type Instances struct {
 	motorboard *motorboard.Motorboard
 	attitude   *attitude.Complementary
 	control    *control.Control
-	http       gohttp.Handler
+	http       *http.Handler
 }
 
 func main() {
@@ -87,11 +86,11 @@ mainLoop:
 		select {
 		case navData := <-navDataCh:
 			attitudeData := i.attitude.Update(navData.Data)
-			fmt.Printf("%s\r", attitudeData)
 			motorSpeeds := i.control.Update(attitudeData)
 			if err := i.motorboard.SetSpeeds(motorSpeeds); err != nil {
 				i.log.Error("Could not set motor speeds. err=%s", err)
 			}
+			i.http.Update(navData, attitudeData)
 		case sig := <-sigCh:
 			i.log.Info("Received signal=%s, shutting down", sig)
 			break mainLoop
@@ -121,6 +120,9 @@ func NewInstances(c Config) (i Instances, err error) {
 	}
 	i.attitude = attitude.NewComplementary()
 	i.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID, c.AltitudePID)
-	i.http = http.NewHandler(i.control, i.log)
+	i.http = http.NewHandler(http.Config{
+		Control: i.control,
+		Log:     i.log,
+	})
 	return
 }
