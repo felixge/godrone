@@ -58,14 +58,12 @@ type Instances struct {
 func main() {
 	flag.Parse()
 
-	var config Config
+	config := DefaultConfig
 	if *c != "" {
 		_, err := toml.DecodeFile(*c, &config)
 		if err != nil {
 			panic(err)
 		}
-	} else {
-		config = DefaultConfig
 	}
 	i, err := NewInstances(config)
 	if err != nil {
