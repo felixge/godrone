@@ -30,7 +30,7 @@ type Control struct {
 	throttle float64
 }
 
-func (c *Control) Set(s attitude.Data, throttle float64) {
+func (c *Control) Set(s attitude.Attitude, throttle float64) {
 	c.l.Lock()
 	defer c.l.Unlock()
 
@@ -40,7 +40,7 @@ func (c *Control) Set(s attitude.Data, throttle float64) {
 	c.throttle = throttle
 }
 
-func (c *Control) Update(a attitude.Data) (speeds [4]float64) {
+func (c *Control) Update(a attitude.Attitude) (speeds [4]float64) {
 	c.l.Lock()
 	defer c.l.Unlock()
 

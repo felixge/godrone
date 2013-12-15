@@ -26,11 +26,11 @@ type Handler struct {
 
 type update struct {
 	NavData      navboard.Data
-	AttitudeData attitude.Data
+	AttitudeData attitude.Attitude
 }
 
 type setpoint struct {
-	attitude.Data
+	attitude.Attitude
 	Throttle float64
 }
 
@@ -78,7 +78,7 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 				return
 			}
 		case s := <-setCh:
-			h.config.Control.Set(s.Data, s.Throttle)
+			h.config.Control.Set(s.Attitude, s.Throttle)
 		case err := <-setErrCh:
 			log.Warn("WebSocket error. err=%s ip=%s", err, ip)
 			return
@@ -94,7 +94,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.fileHandler.ServeHTTP(w, r)
 }
 
-func (h *Handler) Update(n navboard.Data, a attitude.Data) {
+func (h *Handler) Update(n navboard.Data, a attitude.Attitude) {
 	h.pub(update{n, a})
 }
 
