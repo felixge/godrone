@@ -15,11 +15,13 @@ import (
 	"sync"
 )
 
+// Config holds the arguments required to create a Handler.
 type Config struct {
 	Control *control.Control
 	Log     log.Interface
 }
 
+// Handler provides a http.Handler.
 type Handler struct {
 	lock             sync.Mutex
 	config           Config
@@ -38,6 +40,7 @@ type setpoint struct {
 	Throttle float64
 }
 
+// NewHandler returns a new handler.
 func NewHandler(c Config) *Handler {
 	h := &Handler{
 		config:      c,
@@ -90,6 +93,8 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 	}
 }
 
+// ServeHTTP implements the http.Handler interface. It acts as a router
+// dispatching websocket / asset requests.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" && r.URL.Path == "/ws" {
 		h.websocketHandler.ServeHTTP(w, r)
@@ -98,6 +103,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.fileHandler.ServeHTTP(w, r)
 }
 
+// Update informs all connected clients about new navboard.Data and
+// attitude.Data.
 func (h *Handler) Update(n navboard.Data, a attitude.Attitude) {
 	h.pub(update{n, a})
 }
