@@ -1,4 +1,4 @@
-// Package log provides a logging facility.
+// Package log provides the log interface used by all godrone packages.
 package log
 
 import (
