@@ -1,6 +1,9 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"github.com/BurntSushi/toml"
 	"github.com/felixge/godrone/attitude"
 	"github.com/felixge/godrone/control"
 	"github.com/felixge/godrone/drivers/motorboard"
@@ -14,18 +17,20 @@ import (
 	"time"
 )
 
+var c = flag.String("c", "config.toml", "Absolute or relative path to config file.")
+
 type Config struct {
 	NavboardTTY   string
 	MotorboardTTY string
-	RollPID       [3]float64
-	PitchPID      [3]float64
-	YawPID        [3]float64
-	AltitudePID   [3]float64
+	RollPID       []float64
+	PitchPID      []float64
+	YawPID        []float64
+	AltitudePID   []float64
 	HttpAddr      string
 }
 
 var (
-	defaultRollPitchPID = [3]float64{0.04, 0, 0.002}
+	defaultRollPitchPID = []float64{0.04, 0, 0.002}
 
 	green  = motorboard.Leds(motorboard.LedGreen)
 	orange = motorboard.Leds(motorboard.LedOrange)
@@ -37,8 +42,8 @@ var DefaultConfig = Config{
 	MotorboardTTY: "/dev/ttyO0",
 	RollPID:       defaultRollPitchPID,
 	PitchPID:      defaultRollPitchPID,
-	YawPID:        [3]float64{0.04, 0, 0}, // disabled, needs magnotometer to work well
-	AltitudePID:   [3]float64{0.3, 0.03, 0.03},
+	YawPID:        []float64{0.04, 0, 0}, // disabled, needs magnotometer to work well
+	AltitudePID:   []float64{0.3, 0.03, 0.03},
 	HttpAddr:      ":80",
 }
 
@@ -52,7 +57,11 @@ type Instances struct {
 }
 
 func main() {
-	config := DefaultConfig
+	flag.Parse()
+	config, err := NewConfig(*c)
+	if err != nil {
+		panic(err)
+	}
 	i, err := NewInstances(config)
 	if err != nil {
 		panic(err)
@@ -111,7 +120,7 @@ func readNavData(board *navboard.Navboard, ch chan<- navboard.Data) {
 	}
 }
 
-func NewInstances(c Config) (i Instances, err error) {
+func NewInstances(c *Config) (i Instances, err error) {
 	i.log = log.DefaultLogger
 	i.navboard = navboard.NewNavboard(c.NavboardTTY, i.log)
 	i.motorboard, err = motorboard.NewMotorboard(c.MotorboardTTY)
@@ -125,4 +134,19 @@ func NewInstances(c Config) (i Instances, err error) {
 		Log:     i.log,
 	})
 	return
+}
+
+func NewConfig(file string) (*Config, error) {
+	if string(file[0]) != "/" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		file = fmt.Sprintf("%s/%s", wd, file)
+	}
+	var c *Config
+	if _, err := toml.DecodeFile(file, &c); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
