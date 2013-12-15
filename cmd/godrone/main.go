@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/felixge/godrone/attitude"
 	"github.com/felixge/godrone/control"
@@ -17,7 +16,7 @@ import (
 	"time"
 )
 
-var c = flag.String("c", "config.toml", "Absolute or relative path to config file.")
+var c = flag.String("c", "", "Absolute or relative path to config file.")
 
 type Config struct {
 	NavboardTTY   string
@@ -58,9 +57,15 @@ type Instances struct {
 
 func main() {
 	flag.Parse()
-	config, err := NewConfig(*c)
-	if err != nil {
-		panic(err)
+
+	var config Config
+	if *c != "" {
+		_, err := toml.DecodeFile(*c, &config)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		config = DefaultConfig
 	}
 	i, err := NewInstances(config)
 	if err != nil {
@@ -120,7 +125,7 @@ func readNavData(board *navboard.Navboard, ch chan<- navboard.Data) {
 	}
 }
 
-func NewInstances(c *Config) (i Instances, err error) {
+func NewInstances(c Config) (i Instances, err error) {
 	i.log = log.DefaultLogger
 	i.navboard = navboard.NewNavboard(c.NavboardTTY, i.log)
 	i.motorboard, err = motorboard.NewMotorboard(c.MotorboardTTY)
@@ -134,19 +139,4 @@ func NewInstances(c *Config) (i Instances, err error) {
 		Log:     i.log,
 	})
 	return
-}
-
-func NewConfig(file string) (*Config, error) {
-	if string(file[0]) != "/" {
-		wd, err := os.Getwd()
-		if err != nil {
-			return nil, err
-		}
-		file = fmt.Sprintf("%s/%s", wd, file)
-	}
-	var c *Config
-	if _, err := toml.DecodeFile(file, &c); err != nil {
-		return nil, err
-	}
-	return c, nil
 }
