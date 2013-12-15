@@ -3,16 +3,23 @@
 // Client implements a simple WebSocket client to talk to the godrone firmware.
 // It automatically attempts to reconnect when errors occur.
 window.Client = (function() {
-  var Client= function Client(options) {
+  // Ready state constants
+  // https://developer.mozilla.org/en-US/docs/Web/API/WebSocket#Ready_state_constants
+  var CONNECTING = 0;
+  var OPEN = 1;
+  var CLOSING = 2;
+  var CLOSED = 3;
+
+  var Client = function Client(options) {
     // websocket url, e.g. ws://...
     this._url = options.url;
 
     // events
-    this._onConnecting = options.onConnecting;
-    this._onConnect = options.onConnect;
-    this._onError = options.onError;
-    this._onClose = options.onClose;
-    this._onData = options.onData;
+    this._onConnecting = options.onConnecting || function() {};
+    this._onConnect = options.onConnect || function() {};
+    this._onError = options.onError || function() {};
+    this._onClose = options.onClose || function() {};
+    this._onData = options.onData || function() {};
     
     // websocket object
     this._ws = null;
@@ -49,7 +56,11 @@ window.Client = (function() {
   };
 
   Client.prototype.send = function(data) {
-    this._conn.send(JSON.stringify(data));
+    if (this._ws.readyState != OPEN) {
+      return false;
+    }
+    this._ws.send(JSON.stringify(data));
+    return true;
   };
 
   return Client;

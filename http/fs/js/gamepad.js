@@ -4,9 +4,9 @@
 // see http://www.html5rocks.com/en/tutorials/doodles/gamepad/
 window.Gamepad = (function() {
   function Gamepad(options) {
-    this._onConnect = options.onConnect;
-    this._onClose = options.onClose;
-    this._onChange = options.onChange;
+    this._onConnect = options.onConnect || function() {};
+    this._onClose = options.onClose || function() {};
+    this._onChange = options.onChange || function() {};
     this._connected = false;
     this._timestamp = null;
   }
@@ -16,6 +16,7 @@ window.Gamepad = (function() {
   };
 
   Gamepad.prototype._poll = function() {
+    var self = this;
     requestAnimationFrame(this._poll.bind(this));
 
     var gamepad = navigator.webkitGetGamepads()[0];
@@ -33,7 +34,7 @@ window.Gamepad = (function() {
     }
 
     if (gamepad.timestamp != this._timestamp) {
-      this._onChange(gamepad);
+      this._onChange($.extend(true, {}, gamepad));
     }
     this._timestamp = gamepad.timestamp;
   };

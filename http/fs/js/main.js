@@ -8,6 +8,8 @@
         wsStatus: 'Disconnected',
         wsMsgsPerSec: 0,
         gamepad: {Status: 'Disconnected'},
+        fly: false,
+        control: {Roll: 0, Pitch: 0, Yaw: 0, Throttle: 0},
         sensors: {},
         attitude: {},
         raw: {},
@@ -15,8 +17,8 @@
       };
     },
     componentDidMount: function() {
-      this._handleGamepad();
-      this._handleClient();
+      var client = this._handleClient();
+      this._handleGamepad(client);
     },
     _handleClient: function() {
       var self = this;
@@ -27,7 +29,7 @@
       }, 1000);
 
       var firstConnect = true;
-      (new Client({
+      var client = new Client({
         url: this.props.wsUrl,
         onConnecting: function() {
           self.setState({wsStatus: 'Connecting'});
@@ -66,9 +68,14 @@
             raw: data.NavData.Raw,
           });
         },
-      })).connect();
+      });
+      client.connect();
+      return client;
     },
-    _handleGamepad: function() {
+    _handleGamepad: function(client) {
+      var fly = false;
+      var prevGamepad;
+
       var self = this;
       (new Gamepad({
         onConnect: function() {
@@ -81,24 +88,78 @@
           gamepad.Status = 'Disconnected';
           self.setState({gamepad: gamepad});
         },
-        onChange: function(rawState) {
-          var state = {};
-          rawState.axes.forEach(function(val, i) {
-            state['A'+i] = val;
+        onChange: function(gamepad) {
+          var controlState = $.extend(true, {}, self.state.control);
+          var gamepadState = $.extend(true, {}, self.state.gamepad);
+          var throttle = 0;
+          var roll = 0;
+          var pitch = 0;
+
+          function axisToAngle(val) {
+            if (Math.abs(val) < self.props.gamepadAxisMin) {
+              return 0;
+            }
+            return val * self.props.maxAngle;
+          }
+
+          gamepad.axes.forEach(function(val, i) {
+            gamepadState['A'+i] = val;
+
+            if (i === self.props.throttleAxis) {
+              throttle = Math.max(0, -val);
+            } else if (i === self.props.pitchAxis) {
+              pitch = axisToAngle(val);
+            } else if (i === self.props.rollAxis) {
+              roll = axisToAngle(val);
+            } 
           });
-          rawState.buttons.forEach(function(val, i) {
-            state['B'+i] = val;
+          gamepad.buttons.forEach(function(val, i) {
+            gamepadState['B'+i] = val;
+
+            var prevVal = (prevGamepad && prevGamepad.buttons[i]);
+            if (i === self.props.flyButton && val === 0 && prevVal === 1) {
+              fly = !fly;
+            }
           });
 
-          var gamepad = $.extend(true, {}, self.state.gamepad, state);
-          self.setState({gamepad: gamepad});
+          if (!fly) {
+            controlState.Throttle = 0;
+          } else {
+            controlState.Throttle = (self.props.maxThrottle-self.props.flyThrottle)*throttle + self.props.flyThrottle;
+          }
+          controlState.Pitch = pitch;
+          controlState.Roll = roll;
+
+          client.send(controlState);
+          self.setState({
+            gamepad: gamepadState,
+            control: controlState,
+          });
+          prevGamepad = gamepad;
+        },
+        onButtonPress: function(button) {
+          if (button !== self.props.flyButton) {
+            return;
+          }
+
+          self._fly = !self._fly;
+          self._updateControl();
         },
       })).connect();
+    },
+    _updateControl: function() {
+      var control = $.extend(true, {}, this.state.control);
+      if (!this._fly) {
+        control.Throttle = 0;
+      } else {
+        control.Throttle = this.props.flyThrottle;
+      }
+      this.setState({control: control});
     },
     render: function() {
       return (
         <div>
-          <h1>GoDrone</h1>
+          <h1>GoDrone {this.props.version}</h1>
 
           <Table
             title="WebSocket"
@@ -113,14 +174,20 @@
           >
             <p>
               Only tested with <a href="http://goo.gl/OaDB9J">this</a> gamepad
-              right now, but should work with others. B0 (X) square toggles the
-              motors on/off. Right joystick controls throttle, left joystick
-              controls movement. There is no rotation yet. You may also
-              experience buttons that keep toggling as you hold them down, in
-              this case reconnect your controller. It seems to be a Gamepad API
-              issue.
+              right now, but should work with others. B{this.props.flyButton}
+              toggles the motors on/off. Right joystick controls throttle, left
+              joystick controls movement. There is no rotation yet. You may
+              also experience buttons that keep toggling as you hold them down,
+              in this case reconnect your controller. It seems to be a Gamepad
+              API issue.
             </p>
           </Table>
+          <Table
+            title="Control"
+            layout="horizontal"
+            decimals={2}
+            data={this.state.control}
+          />
           <Table
             title="Attitude"
             layout="horizontal"
@@ -158,5 +225,19 @@
     },
   });
 
-  React.renderComponent(<GoDrone version="0.1" wsUrl="ws://192.168.1.1/ws"/>, document.body);
+  React.renderComponent(
+    <GoDrone
+      version="0.1"
+      wsUrl="ws://192.168.1.1/ws"
+      gamepadAxisMin={0.01}
+      maxAngle={3}
+      flyButton={0}
+      pitchAxis={1}
+      rollAxis={0}
+      throttleAxis={3}
+      flyThrottle={0.4}
+      maxThrottle={1}
+    />,
+    document.body
+  );
 })();
