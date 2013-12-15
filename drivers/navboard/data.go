@@ -4,12 +4,15 @@ import (
 	"github.com/felixge/godrone/imu"
 )
 
+// Data holds the navboard data after adjusting for sensitivity / bias.
 type Data struct {
 	imu.Data
 	Raw RawData
 }
 
-// From https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
+// RawNavdata holds the navboard data as read from the tty file.
+// Based on https://github.com/RoboticaTUDelft/paparazzi/blob/minor1/sw/airborne/boards/ardrone/navdata.h
+// but adjusted a little (some values seem to be signed rather than unsigned)
 type RawData struct {
 	Seq uint16
 
@@ -23,7 +26,6 @@ type RawData struct {
 	Gy int16
 	Gz int16
 
-	// Everything below has not been confirmed to be correct yet
 	TemperatureAcc  uint16
 	TemperatureGyro uint16
 
@@ -55,6 +57,7 @@ type RawData struct {
 	Checksum uint16
 }
 
+// ImuData extracts the unadjusted imu.Data contained in the raw data.
 func (r RawData) ImuData() imu.Data {
 	return imu.Data{
 		Ax: float64(r.Ax),

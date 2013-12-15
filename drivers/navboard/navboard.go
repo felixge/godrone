@@ -8,17 +8,15 @@ import (
 	"os"
 )
 
-const (
-	DefaultTTY = "/dev/ttyO1"
-)
-
 // gyroGains are the measured gains for converting the gyroscope output into
 // deg/sec.
+// @TODO make these configurable
 //
 // from: /data/config.ini on drone
 // gyros_gains                    = { 1.0569232e-03 -1.0664322e-03 -1.0732636e-03 }
 var gyroGains = [3]float64{16, -16, -16}
 
+// NewNavboard returns a new Navboard reading from the given tty file.
 func NewNavboard(tty string, log log.Interface) *Navboard {
 	return &Navboard{
 		tty: tty,
@@ -26,6 +24,8 @@ func NewNavboard(tty string, log log.Interface) *Navboard {
 	}
 }
 
+// Navboard implements a driver for the navboard. It is meant to be used from
+// within a single goroutine.
 type Navboard struct {
 	reader      *reader
 	writer      *writer
@@ -35,7 +35,15 @@ type Navboard struct {
 	calibration calibration
 }
 
-// @TODO Turn into ReadData, taking a pointer
+// NextData reads and returns the next data frame from the tty file, or
+// returns an error if there was a problem. All errors should be considered
+// transient.
+//
+// @TODO Turn into ReadData, taking a pointer to avoid allocating too much?
+// @TODO We often get a few errors here before things start humming along, I
+// suspect we need a better way to drain the tty buffer initally, but my first
+// attempt at doing that using O_NONBLOCK failed. For now this is not an issue
+// as the issue sorts itself out after a few calls to NextData.
 func (n *Navboard) NextData() (data Data, err error) {
 	defer func() {
 		if err != nil {
@@ -67,6 +75,8 @@ type calibration struct {
 	Gains   imu.Data
 }
 
+// Calibrate tries to determine the bias and sensitivity of the sensors. It
+// expects that the drone is placed flat on the ground.
 func (n *Navboard) Calibrate() error {
 	var (
 		samples                      = make([]imu.Floats, 0, 40)
@@ -131,7 +141,6 @@ func (n *Navboard) Calibrate() error {
 	g[imu.Ax], g[imu.Ay], g[imu.Az] = ag, ag, -ag
 	o[imu.Az] -= ag
 
-	// @TODO Figure out gains for gyroscopes
 	g[imu.Gx], g[imu.Gy], g[imu.Gz] = gyroGains[0], gyroGains[1], gyroGains[2]
 
 	n.calibration.Offsets = imu.NewData(o)
@@ -160,14 +169,15 @@ func (n *Navboard) open() (err error) {
 	}
 	n.writer = newWriter(n.file)
 	n.reader = newReader(n.file)
-	n.log.Debug("Writing start command")
-	if err = n.writer.WriteCommand(start); err != nil {
+	n.log.Debug("Writing command to start aquisition")
+	if err = n.writer.WriteCommand(startAcq); err != nil {
 		return
 	}
 	n.log.Debug("Opened tty=%s", n.tty)
 	return
 }
 
+// Close closes the navboard tty file.
 func (n *Navboard) Close() (err error) {
 	n.log.Debug("Closing tty=%s", n.tty)
 	if n.file != nil {
