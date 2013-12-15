@@ -12,6 +12,7 @@ import (
 	gohttp "net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 )
@@ -60,8 +61,7 @@ func main() {
 
 	config := DefaultConfig
 	if *c != "" {
-		_, err := toml.DecodeFile(*c, &config)
-		if err != nil {
+		if err := LoadConfig(*c, &config); err != nil {
 			panic(err)
 		}
 	}
@@ -137,4 +137,16 @@ func NewInstances(c Config) (i Instances, err error) {
 		Log:     i.log,
 	})
 	return
+}
+
+func LoadConfig(file string, config *Config) error {
+	if string(file[0]) != "/" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		file = filepath.Join(wd, file)
+	}
+	_, err := toml.DecodeFile(file, &config)
+	return err
 }
