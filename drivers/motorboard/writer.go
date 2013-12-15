@@ -21,7 +21,8 @@ type writer struct {
 	w io.Writer
 }
 
-// WriteSpeeds writes the given [0,1] ranged speeds
+// WriteSpeeds writes the command for updating the motor speeds. Speeds must be
+// int the [0,1] range.
 func (w *writer) WriteSpeeds(speeds [4]float64) (err error) {
 	var pwms [4]uint16
 	for i, speed := range speeds {
@@ -40,6 +41,7 @@ func (w *writer) WriteSpeeds(speeds [4]float64) (err error) {
 	return
 }
 
+// WriteLeds writes the command for updating the LEDs.
 // cmd = 011rrrrx xxxggggx (used to be 011grgrg rgrxxxxx in AR Drone 1.0)
 // see: https://github.com/ardrone/ardrone/blob/master/ardrone/motorboard/motorboard.c#L243
 func (w *writer) WriteLeds(leds [4]LedColor) (err error) {
