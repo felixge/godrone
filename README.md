@@ -52,7 +52,7 @@ for the Parrot AR Drone firmware, allowing for a few interesting use cases:
 This project is licensed under the AGPL v3.
 
 ```
-Copyright (C) 2013 Felix Geisendörfer
+Copyright (C) 2013 Felix Geisendörfer & Contributors
 http://felixge.de/
 
 This program is free software: you can redistribute it and/or modify
