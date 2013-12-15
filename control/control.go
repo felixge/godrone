@@ -14,7 +14,7 @@ const (
 	throttleMax = 1 - rotationMax
 )
 
-func NewControl(roll, pitch, yaw, altitude [3]float64) *Control {
+func NewControl(roll, pitch, yaw, altitude []float64) *Control {
 	return &Control{
 		roll:     pidctrl.NewPIDController(roll[0], roll[1], roll[2]),
 		pitch:    pidctrl.NewPIDController(pitch[0], pitch[1], pitch[2]),
