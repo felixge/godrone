@@ -29,6 +29,11 @@ type update struct {
 	AttitudeData attitude.Data
 }
 
+type setpoint struct {
+	attitude.Data
+	Throttle float64
+}
+
 func NewHandler(c Config) *Handler {
 	h := &Handler{
 		config:      c,
@@ -40,8 +45,10 @@ func NewHandler(c Config) *Handler {
 
 func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 	var (
-		log = h.config.Log
-		ip  = conn.RemoteAddr().String()
+		log      = h.config.Log
+		ip       = conn.Request().RemoteAddr
+		setCh    = make(chan setpoint, 1)
+		setErrCh = make(chan error, 1)
 	)
 
 	defer conn.Close()
@@ -52,14 +59,29 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 	updateCh := h.sub()
 	defer h.unsub(updateCh)
 
+	go func() {
+		for {
+			var s setpoint
+			if err := websocket.JSON.Receive(conn, &s); err != nil {
+				setErrCh <- err
+				return
+			}
+			setCh <- s
+		}
+	}()
+
 	for {
 		select {
 		case u := <-updateCh:
 			if err := websocket.JSON.Send(conn, u); err != nil {
-				log.Error("WebSocket error. err=%s ip=%s", err, ip)
+				log.Warn("WebSocket error. err=%s ip=%s", err, ip)
 				return
 			}
-			break
+		case s := <-setCh:
+			h.config.Control.Set(s.Data, s.Throttle)
+		case err := <-setErrCh:
+			log.Warn("WebSocket error. err=%s ip=%s", err, ip)
+			return
 		}
 	}
 }

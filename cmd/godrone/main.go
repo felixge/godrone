@@ -25,7 +25,6 @@ type Config struct {
 	RollPID       []float64
 	PitchPID      []float64
 	YawPID        []float64
-	AltitudePID   []float64
 	HttpAddr      string
 }
 
@@ -43,7 +42,6 @@ var DefaultConfig = Config{
 	RollPID:       defaultRollPitchPID,
 	PitchPID:      defaultRollPitchPID,
 	YawPID:        []float64{0.04, 0, 0}, // disabled, needs magnotometer to work well
-	AltitudePID:   []float64{0.3, 0.03, 0.03},
 	HttpAddr:      ":80",
 }
 
@@ -131,7 +129,7 @@ func NewInstances(c Config) (i Instances, err error) {
 		return
 	}
 	i.attitude = attitude.NewComplementary()
-	i.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID, c.AltitudePID)
+	i.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID)
 	i.http = http.NewHandler(http.Config{
 		Control: i.control,
 		Log:     i.log,

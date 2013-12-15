@@ -14,12 +14,11 @@ const (
 	throttleMax = 1 - rotationMax
 )
 
-func NewControl(roll, pitch, yaw, altitude []float64) *Control {
+func NewControl(roll, pitch, yaw []float64) *Control {
 	return &Control{
-		roll:     pidctrl.NewPIDController(roll[0], roll[1], roll[2]),
-		pitch:    pidctrl.NewPIDController(pitch[0], pitch[1], pitch[2]),
-		yaw:      pidctrl.NewPIDController(yaw[0], yaw[1], yaw[2]),
-		altitude: pidctrl.NewPIDController(altitude[0], altitude[1], altitude[2]),
+		roll:  pidctrl.NewPIDController(roll[0], roll[1], roll[2]),
+		pitch: pidctrl.NewPIDController(pitch[0], pitch[1], pitch[2]),
+		yaw:   pidctrl.NewPIDController(yaw[0], yaw[1], yaw[2]),
 	}
 }
 
@@ -28,17 +27,17 @@ type Control struct {
 	roll     *pidctrl.PIDController
 	pitch    *pidctrl.PIDController
 	yaw      *pidctrl.PIDController
-	altitude *pidctrl.PIDController
+	throttle float64
 }
 
-func (c *Control) Set(s attitude.Data) {
+func (c *Control) Set(s attitude.Data, throttle float64) {
 	c.l.Lock()
 	defer c.l.Unlock()
 
 	c.roll.Set(s.Roll)
 	c.pitch.Set(s.Pitch)
 	c.yaw.Set(s.Yaw)
-	c.altitude.Set(s.Altitude)
+	c.throttle = throttle
 }
 
 func (c *Control) Update(a attitude.Data) (speeds [4]float64) {
@@ -49,16 +48,12 @@ func (c *Control) Update(a attitude.Data) (speeds [4]float64) {
 		adjRoll  = c.roll.Update(a.Roll)
 		adjPitch = c.pitch.Update(a.Pitch)
 		adjYaw   = c.yaw.Update(a.Yaw)
-		throttle = throttleFly + c.altitude.Update(a.Altitude)
+		throttle = clipToRange(c.throttle*throttleMax, 0, throttleMax)
 	)
 
-	// kill motors if we want to land and are close enough to the ground 0.30 is
-	// the min value the ultrasound can sense.
-	if c.altitude.Get() <= 0 && a.Altitude <= 0.30 {
+	if throttle == 0 {
 		return
 	}
-
-	throttle = clipToRange(throttle, throttleMin, throttleMax)
 
 	speeds = [4]float64{
 		throttle + clip(+adjRoll+adjPitch-adjYaw, rotationMax),

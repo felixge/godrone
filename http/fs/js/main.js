@@ -230,12 +230,12 @@
       version="0.1"
       wsUrl="ws://192.168.1.1/ws"
       gamepadAxisMin={0.01}
-      maxAngle={3}
+      maxAngle={6}
       flyButton={0}
       pitchAxis={1}
       rollAxis={0}
       throttleAxis={3}
-      flyThrottle={0.4}
+      flyThrottle={0.5}
       maxThrottle={1}
     />,
     document.body
