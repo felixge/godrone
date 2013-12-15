@@ -1,3 +1,4 @@
+// Package control implements flight stablization.
 package control
 
 import (
@@ -14,6 +15,8 @@ const (
 	throttleMax = 1 - rotationMax
 )
 
+// NewControl returns a new Control with the given roll, pitch and yaw PID
+// values.
 func NewControl(roll, pitch, yaw []float64) *Control {
 	return &Control{
 		roll:  pidctrl.NewPIDController(roll[0], roll[1], roll[2]),
@@ -22,6 +25,8 @@ func NewControl(roll, pitch, yaw []float64) *Control {
 	}
 }
 
+// Control determines how to translate a given setpoint and measured attitude
+// into motor output.
 type Control struct {
 	l        sync.Mutex
 	roll     *pidctrl.PIDController
@@ -30,6 +35,8 @@ type Control struct {
 	throttle float64
 }
 
+// Set sets the desired attitude and throttle setpoint. For now it does not
+// support altitude stabilization.
 func (c *Control) Set(s attitude.Attitude, throttle float64) {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -40,6 +47,8 @@ func (c *Control) Set(s attitude.Attitude, throttle float64) {
 	c.throttle = throttle
 }
 
+// Update takes the last measured attitude and converts it into motor outputs
+// to correct it towards the setpoint.
 func (c *Control) Update(a attitude.Attitude) (speeds [4]float64) {
 	c.l.Lock()
 	defer c.l.Unlock()
