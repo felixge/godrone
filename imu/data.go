@@ -1,3 +1,9 @@
+// Package imu holds the generic imu.Data type.
+//
+// @TODO; This seems to be overly complicated and should probably be merged
+// into the navboard driver. This pkg will stay undocumented until it's cleaned
+// up.
+// see https://github.com/felixge/godrone/issues/31
 package imu
 
 import (
