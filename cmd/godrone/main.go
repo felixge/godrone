@@ -1,8 +1,8 @@
+// Command godrone implements the GoDrone firmware.
 package main
 
 import (
 	"flag"
-	"github.com/BurntSushi/toml"
 	"github.com/felixge/godrone/attitude"
 	"github.com/felixge/godrone/control"
 	"github.com/felixge/godrone/drivers/motorboard"
@@ -12,47 +12,18 @@ import (
 	gohttp "net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 )
 
-var c = flag.String("c", "", "Absolute or relative path to config file.")
-
-type Config struct {
-	NavboardTTY   string
-	MotorboardTTY string
-	RollPID       []float64
-	PitchPID      []float64
-	YawPID        []float64
-	HttpAddr      string
-}
-
 var (
-	defaultRollPitchPID = []float64{0.04, 0, 0.002}
+	c = flag.String("c", "", "Absolute or relative path to config file.")
 
+	// Convenience values to set the colors of all leds
 	green  = motorboard.Leds(motorboard.LedGreen)
 	orange = motorboard.Leds(motorboard.LedOrange)
 	red    = motorboard.Leds(motorboard.LedRed)
 )
-
-var DefaultConfig = Config{
-	NavboardTTY:   "/dev/ttyO1",
-	MotorboardTTY: "/dev/ttyO0",
-	RollPID:       defaultRollPitchPID,
-	PitchPID:      defaultRollPitchPID,
-	YawPID:        []float64{0.04, 0, 0}, // disabled, needs magnotometer to work well
-	HttpAddr:      ":80",
-}
-
-type Instances struct {
-	log        *log.Logger
-	navboard   *navboard.Navboard
-	motorboard *motorboard.Motorboard
-	attitude   *attitude.Complementary
-	control    *control.Control
-	http       *http.Handler
-}
 
 func main() {
 	flag.Parse()
@@ -63,88 +34,112 @@ func main() {
 			panic(err)
 		}
 	}
-	i, err := NewInstances(config)
+	g, err := NewGoDrone(config)
 	if err != nil {
 		panic(err)
 	}
-	i.log.Info("Starting godrone")
-	defer i.motorboard.Close()
 
-	i.motorboard.SetLeds(green)
+	if err := g.Run(); err != nil {
+		panic(err)
+	}
+}
+
+// NewGoDrone returns a new GoDrone instance, or an error if it could not be
+// created.
+func NewGoDrone(c Config) (g GoDrone, err error) {
+	g.log = log.DefaultLogger
+	g.navboard = navboard.NewNavboard(c.NavboardTTY, g.log)
+	g.motorboard, err = motorboard.NewMotorboard(c.MotorboardTTY)
+	if err != nil {
+		return
+	}
+	g.attitude = attitude.NewComplementary()
+	g.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID)
+	g.http = http.NewHandler(http.Config{
+		Control: g.control,
+		Log:     g.log,
+	})
+	g.httpAddr = c.HttpAddr
+	g.navCh = make(chan navboard.Data)
+	return
+}
+
+// GoDrone wraps the firmware state.
+type GoDrone struct {
+	log        *log.Logger
+	navboard   *navboard.Navboard
+	motorboard *motorboard.Motorboard
+	attitude   *attitude.Complementary
+	control    *control.Control
+	http       *http.Handler
+	httpAddr   string
+	navCh      chan navboard.Data
+}
+
+// Run runs the firmware until SIGINT is received, or something goes terribly
+// wrong.
+func (g *GoDrone) Run() error {
+	g.log.Info("Starting godrone")
+	defer g.motorboard.Close()
+
+	g.motorboard.SetLeds(green)
 	time.Sleep(500 * time.Millisecond)
-	i.motorboard.SetLeds(red)
+	g.motorboard.SetLeds(red)
 
-	i.log.Info("Calibrating sensors")
+	g.log.Info("Calibrating sensors")
 	for {
-		if err := i.navboard.Calibrate(); err == nil {
+		if err := g.navboard.Calibrate(); err == nil {
 			break
 		}
 	}
-	i.motorboard.SetLeds(green)
+	g.motorboard.SetLeds(green)
 
-	navDataCh := make(chan navboard.Data)
-	go readNavData(i.navboard, navDataCh)
+	go g.navboardLoop()
+	go g.serveHttp()
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT)
 
-	go gohttp.ListenAndServe(config.HttpAddr, i.http)
-
-	i.log.Info("Entering main loop")
+	g.log.Info("Entering main loop")
 mainLoop:
 	for {
 		select {
-		case navData := <-navDataCh:
-			attitudeData := i.attitude.Update(navData.Data)
-			motorSpeeds := i.control.Update(attitudeData)
-			if err := i.motorboard.SetSpeeds(motorSpeeds); err != nil {
-				i.log.Error("Could not set motor speeds. err=%s", err)
+		case navData := <-g.navCh:
+			attitudeData := g.attitude.Update(navData.Data)
+			motorSpeeds := g.control.Update(attitudeData)
+			if err := g.motorboard.SetSpeeds(motorSpeeds); err != nil {
+				g.log.Error("Could not set motor speeds. err=%s", err)
 			}
-			i.http.Update(navData, attitudeData)
+			g.http.Update(navData, attitudeData)
 		case sig := <-sigCh:
-			i.log.Info("Received signal=%s, shutting down", sig)
+			g.log.Info("Received signal=%s, shutting down", sig)
 			break mainLoop
 		}
 	}
+	return nil
 }
 
-func readNavData(board *navboard.Navboard, ch chan<- navboard.Data) {
+func (g *GoDrone) navboardLoop() {
+	g.log.Debug("Entering navboard loop")
+	defer g.log.Debug("Leaving navboard loop")
+
 	for {
-		navData, err := board.NextData()
+		navData, err := g.navboard.NextData()
 		if err != nil {
 			continue
 		}
 		select {
-		case ch <- navData:
+		case g.navCh <- navData:
 		default:
 		}
 	}
 }
 
-func NewInstances(c Config) (i Instances, err error) {
-	i.log = log.DefaultLogger
-	i.navboard = navboard.NewNavboard(c.NavboardTTY, i.log)
-	i.motorboard, err = motorboard.NewMotorboard(c.MotorboardTTY)
-	if err != nil {
-		return
-	}
-	i.attitude = attitude.NewComplementary()
-	i.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID)
-	i.http = http.NewHandler(http.Config{
-		Control: i.control,
-		Log:     i.log,
-	})
-	return
-}
+func (g *GoDrone) serveHttp() {
+	g.log.Debug("Entering http loop")
+	defer g.log.Debug("Leaving http loop")
 
-func LoadConfig(file string, config *Config) error {
-	if string(file[0]) != "/" {
-		wd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		file = filepath.Join(wd, file)
+	if err := gohttp.ListenAndServe(g.httpAddr, g.http); err != nil {
+		g.log.Error("Failed to ListenAndServe. err=%s", err)
 	}
-	_, err := toml.DecodeFile(file, &config)
-	return err
 }
