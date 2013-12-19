@@ -14,6 +14,9 @@ This project is a work in progress, but the following things should work:
 * Gamepad control via WebSocket / HTML5 Gamepad API
 * Basic flight!
 
+A 0.1 release will be announced soon. It will come with binary installers for
+OSX, Linux and Windows.
+
 ## Roadmap
 
 The following things still need to be implemented:
