@@ -24,6 +24,7 @@ type Config struct {
 	Log            log.Interface
 	Version        string
 	ControlTimeout time.Duration
+	MaxAngle       int
 }
 
 // Handler provides a http.Handler.
@@ -115,7 +116,8 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 
 func (h *Handler) handleConfig(w http.ResponseWriter, r *http.Request) {
 	config := map[string]interface{}{
-		"version": h.config.Version,
+		"Version":  h.config.Version,
+		"MaxAngle": h.config.MaxAngle,
 	}
 	data, err := json.Marshal(config)
 	if err != nil {

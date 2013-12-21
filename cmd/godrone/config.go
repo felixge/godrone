@@ -12,6 +12,7 @@ type Config struct {
 	LogFile        string
 	LogLevel       string
 	ControlTimeout time.Duration
+	MaxAngle       int
 	RollPID        []float64
 	PitchPID       []float64
 	YawPID         []float64

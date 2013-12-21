@@ -233,10 +233,10 @@
 
   React.renderComponent(
     <GoDrone
-      version={Config.version}
+      version={Config.Version}
       wsUrl="ws://192.168.1.1/ws"
       gamepadAxisMin={0.01}
-      maxAngle={6}
+      maxAngle={Config.MaxAngle}
       flyButton={0}
       pitchAxis={1}
       rollAxis={0}

@@ -77,6 +77,7 @@ func NewGoDrone(c Config) (g GoDrone, err error) {
 		Log:            g.log,
 		Version:        Version,
 		ControlTimeout: c.ControlTimeout,
+		MaxAngle:       c.MaxAngle,
 	})
 	g.httpAddr = c.HttpAddr
 	g.navCh = make(chan navboard.Data)
