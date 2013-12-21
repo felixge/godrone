@@ -1,4 +1,4 @@
-// Command install allows people to install and run GoDrone binaries on their
+// Command deploy allows people to deploy and run GoDrone binaries on their
 // ardrone.
 package main
 
@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const cmdName = "install"
+const cmdName = "deploy"
 
 func Printf(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stdout, format+"\n", args...)
@@ -44,7 +44,7 @@ func main() {
 		NetTimeout:   5 * time.Second,
 	}
 	if err := task.Run(); err != nil {
-		Fatalf("Failed to install godrone: %s", err)
+		Fatalf("Failed to deploy godrone: %s", err)
 	}
 }
 
@@ -98,7 +98,7 @@ func (t DeployTask) Run() error {
 		name := entry.Name()
 		baseName := filepath.Base(name)
 		if strings.HasPrefix(baseName, cmdName) {
-			// don't upload the installer itself
+			// don't upload the deployer itself
 			continue
 		}
 
