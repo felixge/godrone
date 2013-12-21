@@ -96,14 +96,18 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 	for {
 		select {
 		case u := <-updateCh:
+			if err := conn.SetWriteDeadline(time.Now().Add(h.config.ControlTimeout)); err != nil {
+				log.Warn("WebSocket could not set write deadline. err='%s' ip='%s'", err, ip)
+				return
+			}
 			if err := websocket.JSON.Send(conn, u); err != nil {
-				log.Warn("WebSocket error. err='%s' ip='%s'", err, ip)
+				log.Warn("WebSocket send error. err='%s' ip='%s'", err, ip)
 				return
 			}
 		case s := <-setCh:
 			h.config.Control.Set(s.Attitude, s.Throttle)
 		case err := <-setErrCh:
-			log.Warn("WebSocket error. err='%s' ip='%s'", err, ip)
+			log.Warn("WebSocket receive error. err='%s' ip='%s'", err, ip)
 			return
 		}
 	}
