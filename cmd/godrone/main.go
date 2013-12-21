@@ -33,7 +33,7 @@ func main() {
 	var config Config
 	configPath := flag.Arg(0)
 	if configPath == "" {
-		configPath = "config.toml"
+		configPath = "godrone.conf"
 	}
 
 	if err := LoadConfig(configPath, &config); err != nil {

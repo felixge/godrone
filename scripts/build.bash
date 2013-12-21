@@ -55,7 +55,7 @@ main() {
       "${base_pkg}/cmd/godrone"
   cp "${scripts_dir}/start.sh" "${out_dir}"
   cp "${root_dir}/LICENSE.txt" "${out_dir}"
-  cp "${root_dir}/cmd/godrone/config.toml" "${out_dir}"
+  cp "${root_dir}/cmd/godrone/godrone.conf" "${out_dir}"
 }
 
 main $@
