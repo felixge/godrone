@@ -18,6 +18,7 @@ import (
 
 var (
 	// Convenience values to set the colors of all leds
+	// @TODO create a high level LED controller / animator
 	green  = motorboard.Leds(motorboard.LedGreen)
 	orange = motorboard.Leds(motorboard.LedOrange)
 	red    = motorboard.Leds(motorboard.LedRed)
@@ -54,6 +55,7 @@ func main() {
 // created.
 func NewGoDrone(c Config) (g GoDrone, err error) {
 	g.log = log.DefaultLogger
+	g.log.Debug("Config=%+v", c)
 	g.navboard = navboard.NewNavboard(c.NavboardTTY, g.log)
 	g.motorboard, err = motorboard.NewMotorboard(c.MotorboardTTY)
 	if err != nil {
