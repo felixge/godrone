@@ -15,13 +15,15 @@ import (
 	"github.com/felixge/godrone/log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // Config holds the arguments required to create a Handler.
 type Config struct {
-	Control *control.Control
-	Log     log.Interface
-	Version string
+	Control        *control.Control
+	Log            log.Interface
+	Version        string
+	ControlTimeout time.Duration
 }
 
 // Handler provides a http.Handler.
@@ -59,7 +61,14 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 		ip       = conn.Request().RemoteAddr
 		setCh    = make(chan setpoint, 1)
 		setErrCh = make(chan error, 1)
+		zero     setpoint
 	)
+
+	defer func() {
+		// prevent drone from flying into outer space if connection gets
+		// interrupted.
+		h.config.Control.Set(zero.Attitude, zero.Throttle)
+	}()
 
 	defer conn.Close()
 
@@ -72,6 +81,10 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 	go func() {
 		for {
 			var s setpoint
+			if err := conn.SetReadDeadline(time.Now().Add(h.config.ControlTimeout)); err != nil {
+				setErrCh <- err
+				return
+			}
 			if err := websocket.JSON.Receive(conn, &s); err != nil {
 				setErrCh <- err
 				return
@@ -84,13 +97,13 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 		select {
 		case u := <-updateCh:
 			if err := websocket.JSON.Send(conn, u); err != nil {
-				log.Warn("WebSocket error. err=%s ip=%s", err, ip)
+				log.Warn("WebSocket error. err='%s' ip='%s'", err, ip)
 				return
 			}
 		case s := <-setCh:
 			h.config.Control.Set(s.Attitude, s.Throttle)
 		case err := <-setErrCh:
-			log.Warn("WebSocket error. err=%s ip=%s", err, ip)
+			log.Warn("WebSocket error. err='%s' ip='%s'", err, ip)
 			return
 		}
 	}

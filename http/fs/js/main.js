@@ -73,10 +73,17 @@
       return client;
     },
     _handleGamepad: function(client) {
+      var self = this;
       var fly = false;
       var prevGamepad;
+      var controlState = $.extend(true, {}, self.state.control);
 
-      var self = this;
+      // send control at least 4 times / sec to prevent the drone from thinking
+      // there is a network split.
+      setInterval(function() {
+        client.send(controlState);
+      }, 250);
+
       (new Gamepad({
         onConnect: function() {
           var gamepad = $.extend(true, {}, self.state.gamepad);
@@ -89,7 +96,6 @@
           self.setState({gamepad: gamepad});
         },
         onChange: function(gamepad) {
-          var controlState = $.extend(true, {}, self.state.control);
           var gamepadState = $.extend(true, {}, self.state.gamepad);
           var throttle = 0;
           var roll = 0;

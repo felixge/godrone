@@ -1,19 +1,21 @@
 package main
 
 import (
-	"github.com/BurntSushi/toml"
+	"github.com/felixge/toml" // fork, see https://github.com/BurntSushi/toml/pull/14
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // Config holds the user configuration for the GoDrone firmware.
 type Config struct {
-	NavboardTTY   string
-	MotorboardTTY string
-	RollPID       []float64
-	PitchPID      []float64
-	YawPID        []float64
-	HttpAddr      string
+	ControlTimeout time.Duration
+	RollPID        []float64
+	PitchPID       []float64
+	YawPID         []float64
+	HttpAddr       string
+	NavboardTTY    string
+	MotorboardTTY  string
 }
 
 // LoadConfig loads the configuration from a toml file. Other file formats may

@@ -62,9 +62,10 @@ func NewGoDrone(c Config) (g GoDrone, err error) {
 	g.attitude = attitude.NewComplementary()
 	g.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID)
 	g.http = http.NewHandler(http.Config{
-		Control: g.control,
-		Log:     g.log,
-		Version: Version,
+		Control:        g.control,
+		Log:            g.log,
+		Version:        Version,
+		ControlTimeout: c.ControlTimeout,
 	})
 	g.httpAddr = c.HttpAddr
 	g.navCh = make(chan navboard.Data)
