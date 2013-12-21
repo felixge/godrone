@@ -1,8 +1,13 @@
-NavboardTTY = "/dev/ttyO1"
-MotorboardTTY = "/dev/ttyO0"
+# PID controller settings
+# feel free to play with these to adjust control behavior
 RollPID = [ 0.04, 0.0, 0.002 ]
 PitchPID = [ 0.04, 0.0, 0.002 ]
-#disabled, needs magnotometer to work well
 YawPID = [ 0.04, 0.0, 0.0 ]
 AltitudePID = [ 0.3, 0.03, 0.03 ]
+
+# http server settings
 HttpAddr = ":80"
+
+# do not change, otherwise nothing will work
+NavboardTTY = "/dev/ttyO1"
+MotorboardTTY = "/dev/ttyO0"

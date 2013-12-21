@@ -6,6 +6,8 @@ package http
 
 import (
 	"code.google.com/p/go.net/websocket"
+	"encoding/json"
+	"fmt"
 	"github.com/felixge/godrone/attitude"
 	"github.com/felixge/godrone/control"
 	"github.com/felixge/godrone/drivers/navboard"
@@ -19,6 +21,7 @@ import (
 type Config struct {
 	Control *control.Control
 	Log     log.Interface
+	Version string
 }
 
 // Handler provides a http.Handler.
@@ -93,11 +96,30 @@ func (h *Handler) handleWebsocket(conn *websocket.Conn) {
 	}
 }
 
+func (h *Handler) handleConfig(w http.ResponseWriter, r *http.Request) {
+	config := map[string]interface{}{
+		"version": h.config.Version,
+	}
+	data, err := json.Marshal(config)
+	if err != nil {
+		err = h.config.Log.Error("Could marshal JSON config. err=%s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "%s", err)
+		return
+	}
+	w.Header().Set("Content-Type", "text/javascript; charset=UTF-8")
+	fmt.Fprintf(w, "window.Config = %s;", data)
+}
+
 // ServeHTTP implements the http.Handler interface. It acts as a router
 // dispatching websocket / asset requests.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" && r.URL.Path == "/ws" {
 		h.websocketHandler.ServeHTTP(w, r)
+		return
+	}
+	if r.Method == "GET" && r.URL.Path == "/js/config.js" {
+		h.handleConfig(w, r)
 		return
 	}
 	h.fileHandler.ServeHTTP(w, r)

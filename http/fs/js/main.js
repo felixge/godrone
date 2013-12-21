@@ -227,7 +227,7 @@
 
   React.renderComponent(
     <GoDrone
-      version="0.1"
+      version={Config.version}
       wsUrl="ws://192.168.1.1/ws"
       gamepadAxisMin={0.01}
       maxAngle={6}

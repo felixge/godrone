@@ -17,23 +17,29 @@ import (
 )
 
 var (
-	c = flag.String("c", "", "Absolute or relative path to config file.")
-
 	// Convenience values to set the colors of all leds
 	green  = motorboard.Leds(motorboard.LedGreen)
 	orange = motorboard.Leds(motorboard.LedOrange)
 	red    = motorboard.Leds(motorboard.LedRed)
 )
 
+// Version is inserted during the build process.
+// see http://stackoverflow.com/questions/11354518/golang-application-auto-build-versioning/11355611#11355611
+var Version = "N/A"
+
 func main() {
 	flag.Parse()
 
-	config := DefaultConfig
-	if *c != "" {
-		if err := LoadConfig(*c, &config); err != nil {
-			panic(err)
-		}
+	var config Config
+	configPath := flag.Arg(0)
+	if configPath == "" {
+		configPath = "config.toml"
 	}
+
+	if err := LoadConfig(configPath, &config); err != nil {
+		panic(err)
+	}
+
 	g, err := NewGoDrone(config)
 	if err != nil {
 		panic(err)
@@ -58,6 +64,7 @@ func NewGoDrone(c Config) (g GoDrone, err error) {
 	g.http = http.NewHandler(http.Config{
 		Control: g.control,
 		Log:     g.log,
+		Version: Version,
 	})
 	g.httpAddr = c.HttpAddr
 	g.navCh = make(chan navboard.Data)

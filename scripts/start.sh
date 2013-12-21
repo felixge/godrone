@@ -1,23 +1,21 @@
 #!/bin/sh
-# This script kills any previously running control program (e.g. the original
-# parrot firmware, godrone, or godrone diagnostic program) and then starts
-# up the desired program.
 set -eu
 
-readonly cmd="$1"
-readonly envargs="$2"
+src_dir="$(pwd)"
+target_dir="${src_dir/.next/}"
 
-# avoid parrot firmware from restarting restarts
+rm -rf "${target_dir}"
+mv "${src_dir}" "${target_dir}"
+cd "${target_dir}"
+
+# avoid parrot firmware getting restarted after killing it
 touch /tmp/.norespawn
-# kill parrot firmware and the cmd we're deploying if it's running
-killall -9 program.elf "${cmd}" 2> /dev/null || true
-
-cd /data/video
-
-chmod +x "${cmd}"
+# kill parrot firmware and godrone
+killall -9 program.elf godrone 2> /dev/null || true
 
 # Taken from /bin/program.elf.respawner.sh. Not sure why/if it is needed, seems
 # to turn the bottom LED red.
 gpio 181 -d ho 1
 
-exec env $envargs "./${cmd}"
+chmod +x godrone
+./godrone

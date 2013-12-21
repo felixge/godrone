@@ -16,20 +16,6 @@ type Config struct {
 	HttpAddr      string
 }
 
-var (
-	defaultRollPitchPID = []float64{0.04, 0, 0.002}
-)
-
-// DefaultConfig provides sensible defaults in absence of a config file.
-var DefaultConfig = Config{
-	NavboardTTY:   "/dev/ttyO1",
-	MotorboardTTY: "/dev/ttyO0",
-	RollPID:       defaultRollPitchPID,
-	PitchPID:      defaultRollPitchPID,
-	YawPID:        []float64{0.04, 0, 0}, // disabled, needs magnotometer to work well
-	HttpAddr:      ":80",
-}
-
 // LoadConfig loads the configuration from a toml file. Other file formats may
 // be supported in the future as well.
 func LoadConfig(file string, config *Config) error {
