@@ -54,7 +54,16 @@ func main() {
 // NewGoDrone returns a new GoDrone instance, or an error if it could not be
 // created.
 func NewGoDrone(c Config) (g GoDrone, err error) {
-	g.log = log.DefaultLogger
+	var logLevel log.Level
+	logLevel, err = log.ParseLevel(c.LogLevel)
+	if err != nil {
+		return
+	}
+	g.log = log.NewLogger(log.DefaultConfig)
+	if c.LogFile != "" {
+		g.log.Handle(logLevel, log.NewFileWriter(c.LogFile))
+	}
+	g.log.Handle(logLevel, log.DefaultWriter)
 	g.log.Debug("Config=%+v", c)
 	g.navboard = navboard.NewNavboard(c.NavboardTTY, g.log)
 	g.motorboard, err = motorboard.NewMotorboard(c.MotorboardTTY)

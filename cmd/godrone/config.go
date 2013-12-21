@@ -9,6 +9,8 @@ import (
 
 // Config holds the user configuration for the GoDrone firmware.
 type Config struct {
+	LogFile        string
+	LogLevel       string
 	ControlTimeout time.Duration
 	RollPID        []float64
 	PitchPID       []float64
