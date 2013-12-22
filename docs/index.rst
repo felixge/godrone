@@ -13,15 +13,26 @@ adventurous software developers. Meanwhile you can enjoy this teaser video:
 
 .. raw:: html
 
-    <iframe width="560" height="315" src="//www.youtube.com/embed/frVXdUMVj4E" frameborder="0" allowfullscreen></iframe>
+    <p>
+      <iframe width="560" height="315" src="//www.youtube.com/embed/frVXdUMVj4E" frameborder="0" allowfullscreen></iframe>
+    </p>
 
-Documentation
--------------
+User Manual
+-----------
 
 .. toctree::
     :maxdepth: 2
 
+    getting_started
+    config
     faq
     community
+    changelog
+
+
+Contributor Manual
+------------------
+
+To be written ...
 
 .. [#license] GoDrone is licensed under the `AGPLv3 license <https://github.com/felixge/godrone/blob/master/LICENSE.txt>`_.
