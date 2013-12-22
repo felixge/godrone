@@ -7,9 +7,7 @@ main() {
   local root_dir="$( cd "${scripts_dir}"/.. && pwd )"
   local targets=(
     'darwin 386 zip'
-    'darwin amd64 zip'
     'windows 386 zip'
-    'windows amd64 zip'
     'linux 386 tar'
     'linux amd64 tar'
     )
