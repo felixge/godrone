@@ -34,6 +34,14 @@ Otherwise feel free to directly post on our :ref:`issue tracker <tracker>`.
 Features are usually best discussed on the mailing list and added to the
 tracker once there is consensus.
 
+What happens if the drone goes out of WiFi range?
+-------------------------------------------------
+
+To prevent the drone from flying into outer space, it will shut off the motors
+if the network connection gets interrupted for longer than the configured
+``ControlTimeout``. A more graceful approach to landing will be implemented in
+the future.
+
 Does GoDrone provide any features not provided by the official firmware?
 ------------------------------------------------------------------------
 
@@ -60,11 +68,14 @@ interested in. Here are a few ideas:
   <http://nodecopter.com/>`_.
 * Improved HTML client, e.g. usability, design, graphs, WebGL, support for
   mobile devices
+* More aggresive flight, faster vertical speed, and additional tricks.
 * GPS support, including the ability to plan missions in the HTML client on a
   map
 * 3G support, to allow controlling the drone over cellular networks
-* Education applications. e.g. a specialized HTML client to demonstrate
+* Education, e.g. a specialized HTML client to demonstrate
   quadcopter physics
+* Research, GoDrone could make it incredible easy and cheap to reproduce
+  quadcopter research anywhere in the world.
 * Support for uploading JavaScript scripts that run on the drone and allow
   users to create simple applications.
 * Mounting the AR Drone electronics on custom frames, attaching custom sensors,
