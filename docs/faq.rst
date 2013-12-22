@@ -23,7 +23,6 @@ mailing <godrone-dev-list>` to discuss things before getting started.
 Additionally help with the documentation and answering questions on the mailing
 list would be really appreciated.
 
-.. _goals:
 
 Where can I report bugs or propose features?
 --------------------------------------------
@@ -34,6 +33,16 @@ Otherwise feel free to directly post on our :ref:`issue tracker <tracker>`.
 
 Features are usually best discussed on the mailing list and added to the
 tracker once there is consensus.
+
+Does GoDrone provide any features not provided by the official firmware?
+------------------------------------------------------------------------
+
+Not a lot at this point, but being able to control the drone with a gamepad
+using your web browser is nice. It also seems that the official firmware puts
+some limits on speed, especially vertically, so you may find that GoDrone will
+help you with crashing your drone in more spectacular ways : ).
+
+.. _goals:
 
 What are the goals of the project?
 ----------------------------------
