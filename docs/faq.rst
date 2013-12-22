@@ -114,8 +114,8 @@ Where can I get the source code?
 
 The source code is available on GitHub. https://github.com/felixge/godrone
 
-What is the license is GoDrone release under?
----------------------------------------------
+What license is GoDrone released under?
+---------------------------------------
 
 GoDrone is licensed under the `AGPLv3 license
 <https://github.com/felixge/godrone/blob/master/LICENSE.txt>`_.
