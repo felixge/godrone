@@ -7,4 +7,4 @@ dev:
 dist:
 	./scripts/dist.bash $(version)
 
-.PHONY: dev release
+.PHONY: dev dist
