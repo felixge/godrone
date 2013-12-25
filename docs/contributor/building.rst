@@ -4,7 +4,7 @@ Building from source
 OSX & Linux
 -----------
 
-Before getting started: 
+Before getting started:
 
 * Installed the latest version of `Go <http://golang.org/doc/install>`_ (1.2 as
   of writing this)
@@ -33,14 +33,17 @@ Cheney's `guide for cross compiling Go
 <http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go>`_
 instead.
 
-With Go installed and ready, download GoDrone using ``go get`` (ignore the *"no
-buildable Go source files in"* warning)::
+With Go installed and ready, download GoDrone::
 
-    $ go get github.com/felixge/godrone
-    $ cd $(go env GOPATH)/src/github.com/felixge/godrone
-    $ ls -lah
-    # should list the GoDrone source files
+    $ dst="$(go env GOPATH)/src/github.com/felixge"
+    $ mkdir -p "${dst}"
+    $ cd "${dst}"
+    $ git clone git@github.com:felixge/godrone.git
+    $ cd godrone
 
+Now you should be ready to build godrone and upload it to your drone::
+
+    $ make
 
 Windows
 -------

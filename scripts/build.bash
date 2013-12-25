@@ -55,7 +55,7 @@ main() {
   go get "${godrone_pkg}"
   go get "${deploy_pkg}"
 
-  TMPDIR="${scripts_dir}" makefs "${root_dir}/http/fs"
+  makefs "${root_dir}/http/fs"
   env \
     GOOS="${os}" \
     GOARCH="${arch}" \
