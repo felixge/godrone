@@ -1,7 +1,7 @@
 GoDrone
 =======
 
-GoDrone is a free software [1] alternative firmware for the Parrot AR Drone 2.0.
+GoDrone is a free software alternative firmware for the Parrot AR Drone 2.0.
 
 Installation
 ------------
