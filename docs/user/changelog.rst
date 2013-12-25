@@ -4,7 +4,7 @@ Changelog
 0.1.0
 -----
 
-This is the first release. It is aimed at adventurous software developers, and
+**2013-12-25:** This is the first release. It is aimed at adventurous software developers, and
 contains the following features:
 
 * HTML client for controlling the drone via Gamepad. Uses WebSockets, jQuery,
