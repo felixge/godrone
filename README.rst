@@ -18,7 +18,7 @@ http://www.godrone.io/en/latest/user/community_support.html
 Contributing
 ------------
 
-Please start by reading our contribut manual:
+Please start by reading our contributor manual:
 http://www.godrone.io/en/latest/index.html#contributor-manual
 
 License
