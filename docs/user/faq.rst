@@ -128,7 +128,7 @@ portable user interface.
 Other projects are certainly more mature at this point, and e.g. `Paparazzi
 <http://paparazzi.enac.fr/wiki/Main_Page>`_ already has support for the AR
 Drone 2. However, they are significantly more difficult to run and work with,
-and it would be rather difficult to attempt 
+written in C/C++, and use rather archaic UI technology.
 
 .. _source:
 
