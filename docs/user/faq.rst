@@ -17,8 +17,8 @@ Go, the best way to help is by sending pull requests on :ref:`GitHub <source>`
 . There are many :ref:`open issues <tracker>` and :ref:`ideas <goals>`, but any
 proposed changes will be considered.
 
-That being said, it's always a good idea to post to the :ref:`godrone-dev
-mailing <godrone-dev-list>` to discuss things before getting started.
+That being said, it's always a good idea to post to the :ref:`godrone mailing
+<godrone-list>` to discuss things before getting started.
 
 Additionally help with the documentation and answering questions on the mailing
 list would be really appreciated.

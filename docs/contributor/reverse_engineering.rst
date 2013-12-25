@@ -1,5 +1,5 @@
 Reverse Engineering
 ===================
 
-To be written. This document will introduce the basic techniques used for
-reverse engineering the Parrot AR Drone and the original firmware.
+To be written. Guide to the techniques used for reverse engineering the Parrot
+AR Drone 2.0.
