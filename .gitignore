@@ -1,3 +1,11 @@
 /http/fs/fs.go
 /dist
 /docs/_build
+
+# vagrant
+/.vagrant
+/vagrant-provision.log
+/bin
+/pkg
+/src
+/env.sh
