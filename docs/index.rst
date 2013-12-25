@@ -27,7 +27,7 @@ User Manual
     user/first_flight
     user/config
     user/faq
-    user/community
+    user/community_support
     user/changelog
 
 

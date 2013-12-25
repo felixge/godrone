@@ -1,5 +1,5 @@
-Community
-=========
+Community & Support
+===================
 
 This page lists the best ways for interacting with the GoDrone community.
 
