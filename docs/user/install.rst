@@ -18,9 +18,9 @@ Download
 
 The latest version is |release|. You can download it here:
 
-* **OSX:** `Universal (32 and 64-bit) <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-46-g9cb1ff5-darwin-386.zip>`_
-* **Windows:** `Universal (32 and 64-bit) <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-46-g9cb1ff5-windows-386.zip>`_
-* **Linux:** `32-bit <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-46-g9cb1ff5-linux-386.tar.gz>`_ | `64-bit <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-46-g9cb1ff5-linux-amd64.tar.gz>`_
+* **OSX:** `Universal (32 and 64-bit) <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-darwin-386.zip>`_
+* **Windows:** `Universal (32 and 64-bit) <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-windows-386.zip>`_
+* **Linux:** `32-bit <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-linux-386.tar.gz>`_ | `64-bit <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-linux-amd64.tar.gz>`_
 
 Install
 -------
