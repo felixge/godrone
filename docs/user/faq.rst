@@ -118,6 +118,18 @@ becomes more popular than expected, the plan is to rewrite the stabilization
 loop in C, run it on a separate thread with strong scheduling guarantees, and
 use some form of IPC to communicate with it.
 
+Why aren't you building on existing projects?
+---------------------------------------------
+
+This project is about exploring what it would be like to build a drone firmware
+using a high level language, and embracing web technologies for providing a
+portable user interface.
+
+Other projects are certainly more mature at this point, and e.g. `Paparazzi
+<http://paparazzi.enac.fr/wiki/Main_Page>`_ already has support for the AR
+Drone 2. However, they are significantly more difficult to run and work with,
+and it would be rather difficult to attempt 
+
 .. _source:
 
 Where can I get the source code?

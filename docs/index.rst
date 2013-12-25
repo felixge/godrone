@@ -23,16 +23,21 @@ User Manual
 .. toctree::
     :maxdepth: 2
 
-    getting_started
-    config
-    faq
-    community
-    changelog
+    user/getting_started
+    user/config
+    user/faq
+    user/community
+    user/changelog
 
 
 Contributor Manual
 ------------------
 
-To be written ...
+.. toctree::
+    :maxdepth: 2
+
+    contributor/becoming
+    contributor/building
+    contributor/reverse_engineering
 
 .. [#license] GoDrone is licensed under the `AGPLv3 license <https://github.com/felixge/godrone/blob/master/LICENSE.txt>`_.
