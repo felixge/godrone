@@ -241,7 +241,7 @@
       pitchAxis={1}
       rollAxis={0}
       throttleAxis={3}
-      flyThrottle={0.5}
+      flyThrottle={0.4}
       maxThrottle={1}
     />,
     document.body
