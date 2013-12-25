@@ -23,7 +23,8 @@ User Manual
 .. toctree::
     :maxdepth: 2
 
-    user/getting_started
+    user/install
+    user/first_flight
     user/config
     user/faq
     user/community
