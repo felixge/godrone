@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
+# dist.bash <version>
+#
+# Creates archive files ready for distribution for all selected platforms.
+
 main() {
   local version="$1"
   local scripts_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

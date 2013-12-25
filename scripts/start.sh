@@ -1,4 +1,10 @@
 #!/bin/sh
+
+# start.sh
+#
+# Moves a newly uploaded godrone.next folder to its final location, then starts
+# the godrone binary inside of it.
+
 set -eu
 
 src_dir="$(pwd)"
