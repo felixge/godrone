@@ -36,7 +36,6 @@ Contributor Manual
 .. toctree::
     :maxdepth: 2
 
-    contributor/becoming
     contributor/building
     contributor/reverse_engineering
 
