@@ -8,8 +8,8 @@ GoDrone is a free software [#license]_ alternative firmware for the `Parrot AR D
 <http://golang.org/>`_ programming language. There is no affiliation with
 Parrot and running this firmware may void your warranty.
 
-The first release will be announced shortly, and is going to be aimed at
-adventurous software developers. Meanwhile you can enjoy this teaser video:
+The current release is |release|, and is aimed at adventurous software
+developers. If you're curious what to expect, check out this teaser video.
 
 .. raw:: html
 
