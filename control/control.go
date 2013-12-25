@@ -10,8 +10,6 @@ import (
 
 const (
 	rotationMax = 0.15
-	throttleMin = 0.5
-	throttleFly = 0.66
 	throttleMax = 1 - rotationMax
 )
 
