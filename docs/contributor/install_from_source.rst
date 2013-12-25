@@ -1,5 +1,5 @@
-Building from source
-====================
+Install from source
+===================
 
 OSX & Linux
 -----------

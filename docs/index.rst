@@ -36,7 +36,7 @@ Contributor Manual
 .. toctree::
     :maxdepth: 2
 
-    contributor/building
+    contributor/install_from_source
     contributor/reverse_engineering
 
 .. [#license] GoDrone is licensed under the `AGPLv3 license <https://github.com/felixge/godrone/blob/master/LICENSE.txt>`_.
