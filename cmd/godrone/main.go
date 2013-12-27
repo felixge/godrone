@@ -66,10 +66,7 @@ func NewGoDrone(c Config) (g GoDrone, err error) {
 	g.log.Handle(logLevel, log.DefaultWriter)
 	g.log.Debug("Config=%+v", c)
 	g.navboard = navboard.NewNavboard(c.NavboardTTY, g.log)
-	g.motorboard, err = motorboard.NewMotorboard(c.MotorboardTTY)
-	if err != nil {
-		return
-	}
+	g.motorboard = motorboard.NewMotorboard(c.MotorboardTTY)
 	g.attitude = attitude.NewComplementary()
 	g.control = control.NewControl(c.RollPID, c.PitchPID, c.YawPID)
 	g.http = http.NewHandler(http.Config{

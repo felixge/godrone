@@ -1,3 +1,5 @@
 /http/fs/fs.go
 /dist
 /docs/_build
+/godrone
+/godrone.log
