@@ -99,6 +99,8 @@ func (g *GoDrone) Run() error {
 	g.log.Info("Starting godrone")
 	defer g.motorboard.Close()
 
+	go g.serveHttp()
+
 	g.motorboard.SetLeds(green)
 	time.Sleep(500 * time.Millisecond)
 	g.motorboard.SetLeds(red)
@@ -112,7 +114,6 @@ func (g *GoDrone) Run() error {
 	g.motorboard.SetLeds(green)
 
 	go g.navboardLoop()
-	go g.serveHttp()
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT)

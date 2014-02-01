@@ -6,6 +6,7 @@ import (
 	"github.com/felixge/godrone/log"
 	"math"
 	"os"
+	"time"
 )
 
 // gyroGains are the measured gains for converting the gyroscope output into
@@ -52,6 +53,8 @@ func (n *Navboard) NextData() (data Data, err error) {
 	}()
 
 	if err = n.open(); err != nil {
+		// Don't go too crazy on retry.
+		time.Sleep(time.Second)
 		return
 	}
 

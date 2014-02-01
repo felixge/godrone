@@ -61,8 +61,8 @@ main() {
     GOARCH="${arch}" \
     go build -o "${out_dir}/${deploy_name}" "${deploy_pkg}"
   env \
-    GOOS=linux \
-    GOARCH=arm \
+    GOOS="${BUILD_OS:-linux}" \
+    GOARCH="${BUILD_ARCH:-arm}" \
     GOARM=7 \
     CGO_ENABLED=0 \
     go build \

@@ -234,7 +234,7 @@
   React.renderComponent(
     <GoDrone
       version={Config.Version}
-      wsUrl="ws://192.168.1.1/ws"
+      wsUrl={'ws://'+window.location.hostname+':'+window.location.port+'/ws'}
       gamepadAxisMin={0.01}
       maxAngle={Config.MaxAngle}
       flyButton={0}
