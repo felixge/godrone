@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	// navboardTTY is the default location of the navboard tty file.
-	navboardTTY = "/dev/ttyO1"
 	// packetSize is the size of a single navdata payload on the tty stream.
 	packetSize = 0x3a
 )
@@ -20,9 +18,9 @@ var packetHeader = []byte{packetSize, 0x00}
 
 // OpenNavboard opens the navboard tty file at the given location and returns a
 // Navboard struct on success.
-func OpenNavboard() (*Navboard, error) {
+func OpenNavboard(tty string) (*Navboard, error) {
 	n := &Navboard{buf: &bytes.Buffer{}}
-	return n, n.open(navboardTTY)
+	return n, n.open(tty)
 }
 
 // Navboard provides access to the navboard. Must be used from a single
@@ -44,8 +42,8 @@ func (b *Navboard) open(ttyPath string) error {
 	return nil
 }
 
-// Read reads the next packet of navdata into the given data struct.
-func (b *Navboard) Read(data *Navdata) error {
+// Read reads the next packet of navdata.
+func (b *Navboard) Read() (data Navdata, err error) {
 	// The loop below is used to sync with the packet stream received from the
 	// navboard. This has to be done as the first bytes we read will often be in
 	// the middle of a packet. A better approach would be to flush any buffered
@@ -58,9 +56,10 @@ func (b *Navboard) Read(data *Navdata) error {
 	// TCFLSH, so this approach should be retried to make sure.
 	i := 0
 	for {
-		c, err := b.reader.ReadByte()
+		var c byte
+		c, err = b.reader.ReadByte()
 		if err != nil {
-			return err
+			return
 		}
 		if c == packetHeader[i] {
 			i++
@@ -72,21 +71,22 @@ func (b *Navboard) Read(data *Navdata) error {
 		}
 	}
 
-	if _, err := io.CopyN(b.buf, b.reader, packetSize); err != nil {
-		return err
+	if _, err = io.CopyN(b.buf, b.reader, packetSize); err != nil {
+		return
 	}
 	sum := uint16(0)
 	buf := b.buf.Bytes()
 	for i := 0; i < len(buf)-2; i += 2 {
 		sum += uint16(buf[i]) + (uint16(buf[i+1]) << 8)
 	}
-	if err := binary.Read(b.buf, binary.LittleEndian, data); err != nil {
-		return err
+	if err = binary.Read(b.buf, binary.LittleEndian, &data); err != nil {
+		return
 	}
 	if sum != data.Checksum {
-		return fmt.Errorf("Bad checksum. expected=%d got=%d", data.Checksum, sum)
+		err = fmt.Errorf("Bad checksum. expected=%d got=%d", data.Checksum, sum)
+		return
 	}
-	return nil
+	return
 }
 
 // Close closes the underlaying tty file.
@@ -105,14 +105,14 @@ type Navdata struct {
 	Seq uint16
 
 	// Accelerometers
-	ARoll  uint16
-	APitch uint16
-	AYaw   uint16
+	AccRoll  uint16
+	AccPitch uint16
+	AccYaw   uint16
 
 	// Gyroscopes
-	GRoll  int16
-	GPitch int16
-	GYaw   int16
+	GyroRoll  int16
+	GyroPitch int16
+	GyroYaw   int16
 
 	TemperatureAcc  uint16
 	TemperatureGyro uint16

@@ -2,8 +2,7 @@ package main
 
 import "fmt"
 
-// PRY holds pitch, roll, yaw information in degrees (once processed by a
-// filter).
+// PRY holds pitch, roll, yaw information.
 type PRY struct {
 	Pitch float64
 	Roll  float64

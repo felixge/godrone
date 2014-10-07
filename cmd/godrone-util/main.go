@@ -52,6 +52,13 @@ func main() {
 }
 
 func run(dir string) {
+	log.Printf("Cross compiling %s", godroneBin)
+	build := exec.Command("go", "build", godronePkg)
+	build.Env = append(os.Environ(), "GOOS="+goOs, "GOARCH="+goArch)
+	build.Dir = dir
+	if output, err := build.CombinedOutput(); err != nil {
+		log.Fatalf("Compile error: %s: %s", err, output)
+	}
 	log.Printf("Establishing telnet connection")
 	telnet, err := DialTelnet(net.JoinHostPort(*addr, telnetPort))
 	if err != nil {
@@ -63,13 +70,6 @@ func run(dir string) {
 		if string(out) != "" {
 			log.Fatalf("Failed to kill firmware: %s: %s", err, out)
 		}
-	}
-	log.Printf("Cross compiling %s", godroneBin)
-	build := exec.Command("go", "build", godronePkg)
-	build.Env = append(os.Environ(), "GOOS="+goOs, "GOARCH="+goArch)
-	build.Dir = dir
-	if output, err := build.CombinedOutput(); err != nil {
-		log.Fatalf("Compile error: %s: %s", err, output)
 	}
 	file, err := os.Open(filepath.Join(dir, godroneBin))
 	if err != nil {
