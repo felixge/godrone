@@ -12,6 +12,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to open navboard: %s", err)
 	}
+	defer navboard.Close()
+	motorboard, err := OpenMotorboard("/dev/ttyO0")
+	if err != nil {
+		log.Fatalf("Failed to open navboard: %s", err)
+	}
+	defer motorboard.Close()
 	var (
 		// found by experimenting
 		// @TODO allow user to trim these values when drone is flat on ground
@@ -30,6 +36,9 @@ func main() {
 		// Orientation and altitude of the drone as determined by sensor filtering.
 		attitude Attitude
 	)
+	// blink the LEDs to signal that godrone has started
+	motorboard.WriteLeds(Leds(LedOff))
+	time.Sleep(200 * time.Millisecond)
 	for {
 		navdata, err := navboard.Read()
 		if err != nil {
@@ -39,5 +48,7 @@ func main() {
 		sensors := calibration.Convert(navdata)
 		filter.Update(&attitude.PRY, sensors.Acc, sensors.Gyro, dt)
 		log.Printf("%s", attitude)
+		motorboard.WriteSpeeds([4]float64{0.1, 0.1, 0.1, 0.1})
+		motorboard.WriteLeds(Leds(LedGreen))
 	}
 }
