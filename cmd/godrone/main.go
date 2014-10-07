@@ -16,9 +16,9 @@ func main() {
 		// found by experimenting
 		// @TODO allow user to trim these values when drone is flat on ground
 		calibration = Calibration{
-			AccZeros:        PRY{Pitch: 2032, Roll: 2080, Yaw: 2020},
+			AccZeros:        PRY{Pitch: 2032, Roll: 2078, Yaw: 2020},
 			AccSensitivity:  PRY{Pitch: 1, Roll: 1, Yaw: 1},
-			GyroZeros:       PRY{Pitch: -21, Roll: 12, Yaw: 10},
+			GyroZeros:       PRY{Pitch: 7.8, Roll: -19, Yaw: 10.3},
 			GyroSensitivity: PRY{Pitch: -16, Roll: 16, Yaw: 16},
 		}
 		// seems to work well in practice
