@@ -1,6 +1,10 @@
 package main
 
-import "flag"
+import (
+	"flag"
+	"fmt"
+	"time"
+)
 import goftp "github.com/jlaffaye/goftp"
 import "io/ioutil"
 
@@ -28,6 +32,7 @@ const (
 	ftpDir       = "/data/video"
 	telnetPort   = "23"
 	tmpDirPrefix = "godrone-util"
+	killCmd      = "program.elf program.elf.respawner.sh " + godroneBin
 )
 
 func main() {
@@ -47,6 +52,18 @@ func main() {
 }
 
 func run(dir string) {
+	log.Printf("Establishing telnet connection")
+	telnet, err := DialTelnet(net.JoinHostPort(*addr, telnetPort))
+	if err != nil {
+		log.Fatalf("Telnet connect error: %s", err)
+	}
+	defer telnet.Close()
+	log.Printf("Killing firmware (restart drone to get it back)")
+	if out, err := telnet.Exec("killall -q -KILL " + killCmd); err != nil {
+		if string(out) != "" {
+			log.Fatalf("Failed to kill firmware: %s: %s", err, out)
+		}
+	}
 	log.Printf("Cross compiling %s", godroneBin)
 	build := exec.Command("go", "build", godronePkg)
 	build.Env = append(os.Environ(), "GOOS="+goOs, "GOARCH="+goArch)
@@ -59,24 +76,27 @@ func run(dir string) {
 		log.Fatalf("Could not open godrone file: %s", err)
 	}
 	defer file.Close()
-	log.Printf("Uploading %s", godroneBin)
+	log.Printf("Establishing ftp connection")
 	ftp, err := goftp.Connect(net.JoinHostPort(*addr, ftpPort))
 	if err != nil {
 		log.Fatalf("FTP connect error: %s", err)
 	}
 	defer ftp.Quit()
+	log.Printf("Uploading %s", godroneBin)
 	ftp.MakeDir(godroneDir)
 	if err := ftp.Stor(path.Join(godroneDir, godroneBin), file); err != nil {
 		log.Fatalf("Failed to upload: %s", err)
 	}
 	ftp.Quit()
 	file.Close()
-	log.Printf("Starting %s", godroneBin)
-	telnet, err := DialTelnet(net.JoinHostPort(*addr, telnetPort))
-	if err != nil {
-		log.Fatalf("Telnet connect error: %s", err)
+	// otherwise the drone starts counting time from Jan 1st 2000 after restart
+	// which is annoying when trying to correlate log output to observed behavior
+	log.Printf("Syncing drone clock with host clock")
+	now := time.Now().Format("2006-01-02 15:04:05")
+	if out, err := telnet.Exec(fmt.Sprintf("date -s '%s'", now)); err != nil {
+		log.Fatalf("Failed to sync clock: %s: %s", err, out)
 	}
-	defer telnet.Close()
+	log.Printf("Starting %s", godroneBin)
 	if out, err := telnet.Exec("cd '" + path.Join(ftpDir, godroneDir) + "'"); err != nil {
 		log.Fatalf("Failed to change directory: %s: %s", err, out)
 	}

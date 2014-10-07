@@ -40,11 +40,26 @@ func (t *Telnet) Exec(cmd string) ([]byte, error) {
 	if err != nil {
 		return code, err
 	}
-	trimCode := strings.TrimSpace(string(code))
-	if trimCode != "0" {
-		return out, fmt.Errorf("exit code %s", trimCode)
+	var intCode int
+	if _, err := fmt.Sscanf(string(code), "%d", &intCode); err != nil {
+		return code, err
+	}
+	if intCode != 0 {
+		return out, TelnetExitError{code: intCode}
 	}
 	return out, nil
+}
+
+type TelnetExitError struct {
+	code int
+}
+
+func (e TelnetExitError) Error() string {
+	return fmt.Sprintf("exit code %d", e.code)
+}
+
+func (e TelnetExitError) Code() int {
+	return e.code
 }
 
 // ExecRaw executes the given command and returns the output. Exit codes are
