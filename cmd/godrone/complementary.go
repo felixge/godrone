@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-const (
-	rad2Deg = 180 / math.Pi
-)
-
 // Implements a simple complementation filter.
 // see http://www.pieter-jan.com/node/11
 type Complementary struct {
@@ -38,5 +34,6 @@ func (c Complementary) Update(state *PRY, acc, gyro PRY, dt time.Duration) {
 }
 
 func degAngle(a, b float64) float64 {
+	const rad2Deg = 180 / math.Pi
 	return math.Atan2(a, b) * rad2Deg
 }
