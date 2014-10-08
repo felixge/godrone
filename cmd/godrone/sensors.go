@@ -5,26 +5,31 @@ type Sensors struct {
 	Acc PRY
 	// Rotation in deg/s
 	Gyro PRY
+	// Altitude in m
+	Sonar float64
 }
 
 type Calibration struct {
-	AccZeros        PRY
-	AccSensitivity  PRY
-	GyroZeros       PRY
-	GyroSensitivity PRY
+	AccZeros   PRY
+	AccScale   PRY
+	GyroZeros  PRY
+	GyroScale  PRY
+	SonarScale float64
+	SonarZero  float64
 }
 
-func (t Calibration) Convert(data Navdata) Sensors {
+func (c Calibration) Convert(data Navdata) Sensors {
 	return Sensors{
 		Acc: PRY{
-			Pitch: (float64(data.AccPitch) - t.AccZeros.Pitch) / t.AccSensitivity.Pitch,
-			Roll:  (float64(data.AccRoll) - t.AccZeros.Roll) / t.AccSensitivity.Roll,
-			Yaw:   (float64(data.AccYaw) - t.AccZeros.Yaw) / t.AccSensitivity.Yaw,
+			Pitch: (float64(data.AccPitch) - c.AccZeros.Pitch) / c.AccScale.Pitch,
+			Roll:  (float64(data.AccRoll) - c.AccZeros.Roll) / c.AccScale.Roll,
+			Yaw:   (float64(data.AccYaw) - c.AccZeros.Yaw) / c.AccScale.Yaw,
 		},
 		Gyro: PRY{
-			Pitch: (float64(data.GyroPitch) - t.GyroZeros.Pitch) / t.GyroSensitivity.Pitch,
-			Roll:  (float64(data.GyroRoll) - t.GyroZeros.Roll) / t.GyroSensitivity.Roll,
-			Yaw:   (float64(data.GyroYaw) - t.GyroZeros.Yaw) / t.GyroSensitivity.Yaw,
+			Pitch: (float64(data.GyroPitch) - c.Gyroeros.Pitch) / c.GyroScale.Pitch,
+			Roll:  (float64(data.GyroRoll) - c.GyroZeros.Roll) / c.GyroScale.Roll,
+			Yaw:   (float64(data.GyroYaw) - c.GyroZeros.Yaw) / c.GyroScale.Yaw,
 		},
+		Sonar: (float64(data.Ultrasound&0x7FFF) - c.SonarZero) / c.SonarScale,
 	}
 }
