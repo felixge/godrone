@@ -12,8 +12,6 @@ type Filter struct {
 	GyroGain float64
 	// SonarGain as fraction of 1
 	SonarGain float64
-	// SonarMin in m
-	SonarMin float64
 	// SonarMax in m
 	SonarMax float64
 }
@@ -40,20 +38,11 @@ func (f Filter) Update(state *State, sensors Sensors, dt time.Duration) {
 	state.Orientation.Roll = gyroDeg.Roll*f.GyroGain + accDeg.Roll*f.AccGain
 	// @TODO Integrate gyro yaw with magotometer yaw
 	state.Orientation.Yaw = gyroDeg.Yaw
-	// The sonar seems to be unable to detect the ground when its very close, so
-	// we treat all values below this min as 0.
-	var sonar = sensors.Sonar
-	if sensors.Sonar < f.SonarMin {
-		sonar = 0
-	}
 	// The sonar sometimes reads very high values when on the ground. Ignoring
 	// the sonar above a certain altitude solves the problem.
 	// @TODO Use barometer above SonarMax
 	if sensors.Sonar < f.SonarMax {
-		state.Altitude += (sonar - state.Altitude) * f.SonarGain
-	}
-	if state.Altitude < 0 {
-		state.Altitude = 0
+		state.Altitude += (sensors.Sonar - state.Altitude) * f.SonarGain
 	}
 }
 
