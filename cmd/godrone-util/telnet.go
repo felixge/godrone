@@ -29,7 +29,7 @@ type Telnet struct {
 	prompt string
 }
 
-// Exec executes the given command and returns the output. Exit codes codes are
+// Exec executes the given command and returns the output. Exit codes > 0 are
 // considered errors.
 func (t *Telnet) Exec(cmd string) ([]byte, error) {
 	out, err := t.ExecRaw(cmd)

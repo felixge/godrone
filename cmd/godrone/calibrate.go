@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math"
-	"time"
 )
 
 type Calibration struct {
@@ -33,16 +31,12 @@ func (c Calibration) Convert(data Navdata) Sensors {
 }
 
 type Calibrator struct {
-	Samples    int
-	MaxStdDev  float64
-	Navboard   *Navboard
-	Motorboard *Motorboard
+	Samples   int
+	MaxStdDev float64
 }
 
-func (c *Calibrator) Calibrate(r *Calibration) error {
-	log.Printf("Calibrating")
+func (c *Calibrator) Calibrate(navboard *Navboard, r *Calibration) error {
 	var (
-		err     error
 		samples [][6]float64
 		sums    [6]float64
 		means   [6]float64
@@ -50,10 +44,9 @@ func (c *Calibrator) Calibrate(r *Calibration) error {
 		stdDevs [6]float64
 	)
 	for i := 0; i < c.Samples; i++ {
-		var data Navdata
-		data, err = c.Navboard.Read()
+		data, err := navboard.Read()
 		if err != nil {
-			break
+			return err
 		}
 		sample := [6]float64{
 			float64(data.AccPitch),
@@ -67,63 +60,49 @@ func (c *Calibrator) Calibrate(r *Calibration) error {
 		for i, val := range sample {
 			sums[i] += val
 		}
-		// Make the LEDs blink green while reading calibration samples
-		if i%20 > 10 {
-			c.Motorboard.WriteLeds(Leds(LedGreen))
-		} else {
-			c.Motorboard.WriteLeds(Leds(LedOff))
-		}
-		_ = data
 	}
-	if err == nil {
-		for i, sum := range sums {
-			means[i] = sum / float64(len(samples))
-		}
-		for _, sample := range samples {
-			for i, val := range sample {
-				sqrSums[i] += (val - means[i]) * (val - means[i])
-			}
-		}
-		for i, sqrSum := range sqrSums {
-			stdDevs[i] = math.Sqrt(sqrSum / float64(len(samples)))
+	for i, sum := range sums {
+		means[i] = sum / float64(len(samples))
+	}
+	for _, sample := range samples {
+		for i, val := range sample {
+			sqrSums[i] += (val - means[i]) * (val - means[i])
 		}
 	}
-	for i, stdDev := range stdDevs {
-		// Detect if there is too much sensor noise (due to the drone moving, or
-		// sensor issues).
+	for i, sqrSum := range sqrSums {
+		stdDevs[i] = math.Sqrt(sqrSum / float64(len(samples)))
+	}
+	// Detect if there is too much sensor noise (due to the drone moving, or
+	// sensor issues).
+	for _, stdDev := range stdDevs {
 		if stdDev > c.MaxStdDev {
-			err = fmt.Errorf("Standard deviation too high")
-		} else {
-			var val = means[i]
-			switch i {
-			case 0:
-				r.AccZeros.Pitch = val
-			case 1:
-				r.AccZeros.Roll = val
-			case 2:
-				// Yaw should measure 1G during calibration, so we'll assume its zero
-				// value to be of similar value as pitch/yaw
-				r.AccZeros.Yaw = (r.AccZeros.Pitch + r.AccZeros.Roll) / 2
-				// Now we can estimate the scale of 1G for all sensors.
-				r.AccScale.Pitch = val - r.AccZeros.Yaw
-				r.AccScale.Roll = val - r.AccZeros.Yaw
-				r.AccScale.Yaw = val - r.AccZeros.Yaw
-			case 3:
-				r.GyroZeros.Pitch = val
-			case 4:
-				r.GyroZeros.Roll = val
-			case 5:
-				r.GyroZeros.Yaw = val
-			}
+			return fmt.Errorf("Standard deviation too high")
 		}
 	}
-	if err != nil {
-		log.Printf("Failed to calibrate: %s", err)
-		c.Motorboard.WriteLeds(Leds(LedRed))
-		time.Sleep(time.Second)
-	} else {
-		log.Printf("Calibration succeeded")
+	for i, mean := range means {
+		switch i {
+		case 0:
+			r.AccZeros.Pitch = mean
+		case 1:
+			r.AccZeros.Roll = mean
+		case 2:
+			if mean < r.AccZeros.Pitch || mean < r.AccZeros.Roll {
+				return fmt.Errorf("Bad yaw, is drone on its back?")
+			}
+			// Yaw should measure 1G during calibration, so we'll assume its zero
+			// value to be between pitch and roll.
+			r.AccZeros.Yaw = (r.AccZeros.Pitch + r.AccZeros.Roll) / 2
+			// Now we can estimate the scale of 1G for all sensors.
+			r.AccScale.Pitch = mean - r.AccZeros.Yaw
+			r.AccScale.Roll = mean - r.AccZeros.Yaw
+			r.AccScale.Yaw = mean - r.AccZeros.Yaw
+		case 3:
+			r.GyroZeros.Pitch = mean
+		case 4:
+			r.GyroZeros.Roll = mean
+		case 5:
+			r.GyroZeros.Yaw = mean
+		}
 	}
-	c.Motorboard.WriteLeds(Leds(LedGreen))
 	return nil
 }

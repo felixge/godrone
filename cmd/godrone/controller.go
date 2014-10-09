@@ -12,39 +12,28 @@ const (
 )
 
 type Controller struct {
-	Pitch        PID
-	Roll         PID
-	Yaw          PID
-	Altitude     PID
-	LandAltitude float64
+	Pitch    PID
+	Roll     PID
+	Yaw      PID
+	Altitude PID
 }
 
-func (c *Controller) Apply(desired State, actual *State, dt time.Duration, motorboard *Motorboard) error {
+func (c *Controller) Control(actual, desired Placement, dt time.Duration) [4]float64 {
 	var speeds [4]float64
-	if desired.Fly || !desired.Fly && actual.Altitude > c.LandAltitude {
-		var (
-			a        = actual
-			d        = desired
-			pitchOut = c.Roll.Update(a.Orientation.Pitch, d.Orientation.Pitch, dt)
-			rollOut  = c.Roll.Update(a.Orientation.Roll, d.Orientation.Roll, dt)
-			yawOut   = c.Yaw.Update(a.Orientation.Yaw, d.Orientation.Yaw, dt)
-			altOut   = c.Altitude.Update(a.Altitude, d.Altitude, dt)
-		)
-		throttle := math.Max(throttleMin, math.Min(throttleMax, throttleHover+altOut))
-		speeds = [4]float64{
-			throttle + clipBand(+rollOut+pitchOut+yawOut, rotationBand),
-			throttle + clipBand(-rollOut+pitchOut-yawOut, rotationBand),
-			throttle + clipBand(-rollOut-pitchOut+yawOut, rotationBand),
-			throttle + clipBand(+rollOut-pitchOut-yawOut, rotationBand),
-		}
-		actual.Fly = true
-	} else {
-		actual.Fly = false
+	var (
+		pitchOut = c.Roll.Update(actual.Pitch, desired.Pitch, dt)
+		rollOut  = c.Roll.Update(actual.Roll, desired.Roll, dt)
+		yawOut   = c.Yaw.Update(actual.Yaw, desired.Yaw, dt)
+		altOut   = c.Altitude.Update(actual.Altitude, desired.Altitude, dt)
+	)
+	throttle := math.Max(throttleMin, math.Min(throttleMax, throttleHover+altOut))
+	speeds = [4]float64{
+		throttle + clipBand(+rollOut+pitchOut+yawOut, rotationBand),
+		throttle + clipBand(-rollOut+pitchOut-yawOut, rotationBand),
+		throttle + clipBand(-rollOut-pitchOut+yawOut, rotationBand),
+		throttle + clipBand(+rollOut-pitchOut-yawOut, rotationBand),
 	}
-	if err := motorboard.WriteSpeeds(speeds); err != nil {
-		return err
-	}
-	return nil
+	return speeds
 }
 
 func clipBand(val, band float64) float64 {

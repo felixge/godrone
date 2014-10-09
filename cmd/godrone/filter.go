@@ -16,7 +16,7 @@ type Filter struct {
 	SonarMax float64
 }
 
-func (f Filter) Update(state *State, sensors Sensors, dt time.Duration) {
+func (f Filter) Update(placement *Placement, sensors Sensors, dt time.Duration) {
 	if f.AccGain+f.GyroGain != 1 {
 		panic("Gains must add up to 1")
 	}
@@ -27,22 +27,22 @@ func (f Filter) Update(state *State, sensors Sensors, dt time.Duration) {
 			Roll:  degAngle(sensors.Acc.Pitch, sensors.Acc.Yaw),
 		}
 		gyroDeg = PRY{
-			Pitch: state.Orientation.Pitch + (sensors.Gyro.Pitch * dts),
-			Roll:  state.Orientation.Roll + (sensors.Gyro.Roll * dts),
-			Yaw:   state.Orientation.Yaw + (sensors.Gyro.Yaw * dts),
+			Pitch: placement.Pitch + (sensors.Gyro.Pitch * dts),
+			Roll:  placement.Roll + (sensors.Gyro.Roll * dts),
+			Yaw:   placement.Yaw + (sensors.Gyro.Yaw * dts),
 		}
 	)
 	// Implements a simple complementation filter.
 	// see http://www.pieter-jan.com/node/11
-	state.Orientation.Pitch = gyroDeg.Pitch*f.GyroGain + accDeg.Pitch*f.AccGain
-	state.Orientation.Roll = gyroDeg.Roll*f.GyroGain + accDeg.Roll*f.AccGain
+	placement.Pitch = gyroDeg.Pitch*f.GyroGain + accDeg.Pitch*f.AccGain
+	placement.Roll = gyroDeg.Roll*f.GyroGain + accDeg.Roll*f.AccGain
 	// @TODO Integrate gyro yaw with magotometer yaw
-	state.Orientation.Yaw = gyroDeg.Yaw
+	placement.Yaw = gyroDeg.Yaw
 	// The sonar sometimes reads very high values when on the ground. Ignoring
 	// the sonar above a certain altitude solves the problem.
 	// @TODO Use barometer above SonarMax
 	if sensors.Sonar < f.SonarMax {
-		state.Altitude += (sensors.Sonar - state.Altitude) * f.SonarGain
+		placement.Altitude += (sensors.Sonar - placement.Altitude) * f.SonarGain
 	}
 }
 
