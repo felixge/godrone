@@ -45,17 +45,28 @@ func main() {
 	defer os.RemoveAll(tmpDir)
 	switch cmd := flag.Arg(0); cmd {
 	case "run":
-		run(tmpDir)
+		pkg := flag.Arg(1)
+		if pkg == "" {
+			pkg = godronePkg
+		}
+		run(pkg, tmpDir)
 	default:
 		log.Fatalf("Unknown command: %s", cmd)
 	}
 }
 
-func run(dir string) {
-	log.Printf("Cross compiling %s", godroneBin)
-	build := exec.Command("go", "build", godronePkg)
+func run(pkg, buildDir string) {
+	binName := filepath.Base(pkg)
+	log.Printf("Getting %s", pkg)
+	get := exec.Command("go", "get", pkg)
+	get.Dir = buildDir
+	if output, err := get.CombinedOutput(); err != nil {
+		log.Fatalf("Compile error: %s: %s", err, output)
+	}
+	log.Printf("Cross compiling")
+	build := exec.Command("go", "build", pkg)
 	build.Env = append(os.Environ(), "GOOS="+goOs, "GOARCH="+goArch)
-	build.Dir = dir
+	build.Dir = buildDir
 	if output, err := build.CombinedOutput(); err != nil {
 		log.Fatalf("Compile error: %s: %s", err, output)
 	}
@@ -71,7 +82,7 @@ func run(dir string) {
 			log.Fatalf("Failed to kill firmware: %s: %s", err, out)
 		}
 	}
-	file, err := os.Open(filepath.Join(dir, godroneBin))
+	file, err := os.Open(filepath.Join(buildDir, binName))
 	if err != nil {
 		log.Fatalf("Could not open godrone file: %s", err)
 	}
@@ -82,9 +93,10 @@ func run(dir string) {
 		log.Fatalf("FTP connect error: %s", err)
 	}
 	defer ftp.Quit()
-	log.Printf("Uploading %s", godroneBin)
+	dstPath := path.Join(godroneDir, godroneBin)
+	log.Printf("Uploading %s to %s", binName, dstPath)
 	ftp.MakeDir(godroneDir)
-	if err := ftp.Stor(path.Join(godroneDir, godroneBin), file); err != nil {
+	if err := ftp.Stor(dstPath, file); err != nil {
 		log.Fatalf("Failed to upload: %s", err)
 	}
 	ftp.Quit()
