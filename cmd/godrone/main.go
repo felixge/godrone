@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/felixge/godrone"
 )
 
 type State int
@@ -30,13 +32,13 @@ const (
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 	log.Printf("Godrone started")
-	firmware, err := NewFirmware()
+	firmware, err := godrone.NewFirmware()
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 	defer firmware.Close()
 	go serveHttp()
-	firmware.Motorboard.WriteLeds(Leds(LedGreen))
+	firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedGreen))
 	var state = Calibrate
 	for {
 		var err error
@@ -44,22 +46,22 @@ func main() {
 		case Calibrate:
 			// @TODO The LEDs don't seem to turn off when this is called again after
 			// a calibration errors, instead they just blink. Not sure why.
-			firmware.Motorboard.WriteLeds(Leds(LedOff))
+			firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedOff))
 			log.Printf("Calibrating sensors")
 			err = firmware.Calibrate()
 			if err != nil {
-				firmware.Motorboard.WriteLeds(Leds(LedRed))
+				firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedRed))
 				time.Sleep(time.Second)
 			} else {
 				log.Printf("Finished calibration")
 				state = Landed
-				firmware.Motorboard.WriteLeds(Leds(LedGreen))
+				firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedGreen))
 			}
 		case Landed:
 			err = firmware.Observe()
 		case TakeoffStart:
 			firmware.Desired.Altitude = TakeoffAltitude
-			firmware.Desired.PRY = PRY{}
+			firmware.Desired.PRY = godrone.PRY{}
 			state = Takeoff
 		case Takeoff:
 			err = firmware.Fly()
@@ -70,7 +72,7 @@ func main() {
 			err = firmware.Fly()
 		case Land:
 			firmware.Desired.Altitude = 0
-			firmware.Desired.PRY = PRY{}
+			firmware.Desired.PRY = godrone.PRY{}
 			err = firmware.Fly()
 			if firmware.Actual.Altitude <= LandAltitude {
 				state = Landed

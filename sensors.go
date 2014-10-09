@@ -1,4 +1,4 @@
-package main
+package godrone
 
 type Sensors struct {
 	// Acceleration in m/s^2
