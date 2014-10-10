@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -60,7 +59,6 @@ func main() {
 		} else {
 			err = firmware.Observe()
 		}
-		fmt.Printf("%s\n", firmware.Actual)
 		if err != nil {
 			log.Printf("%s", err)
 		}
