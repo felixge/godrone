@@ -24,10 +24,10 @@ func (c *Controller) Control(actual, desired Placement, dt time.Duration) [4]flo
 	)
 	throttle := math.Max(c.ThrottleMin, math.Min(1-c.RotationBand, c.ThrottleMin+altOut))
 	speeds = [4]float64{
-		throttle + clipBand(+rollOut+pitchOut+yawOut, rotationBand),
-		throttle + clipBand(-rollOut+pitchOut-yawOut, rotationBand),
-		throttle + clipBand(-rollOut-pitchOut+yawOut, rotationBand),
-		throttle + clipBand(+rollOut-pitchOut-yawOut, rotationBand),
+		throttle + clipBand(+rollOut+pitchOut+yawOut, c.RotationBand),
+		throttle + clipBand(-rollOut+pitchOut-yawOut, c.RotationBand),
+		throttle + clipBand(-rollOut-pitchOut+yawOut, c.RotationBand),
+		throttle + clipBand(+rollOut-pitchOut-yawOut, c.RotationBand),
 	}
 	return speeds
 }
