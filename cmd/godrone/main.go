@@ -3,30 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/felixge/godrone"
-)
-
-type State int
-
-const (
-	None State = iota
-	Landed
-	LandStart
-	Land
-	Calibrate
-	TakeoffStart
-	Takeoff
-	Fly
-)
-
-const (
-	// TakeoffAltitude is the altitude to aim for on takeoff
-	TakeoffAltitude = 0.5
-	// LandAltitude is the altitude at which to cutoff the engines when landing.
-	// Must be > 0 due to the sonar being unable to measure small distances.
-	LandAltitude = 0.3
+	"github.com/gorilla/websocket"
 )
 
 func main() {
@@ -37,13 +18,10 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 	defer firmware.Close()
-	go serveHttp()
-	firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedGreen))
-	var state = Calibrate
-	for {
-		var err error
-		switch state {
-		case Calibrate:
+	reqCh := make(chan Request)
+	go serveHttp(reqCh)
+	calibrate := func() {
+		for {
 			// @TODO The LEDs don't seem to turn off when this is called again after
 			// a calibration errors, instead they just blink. Not sure why.
 			firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedOff))
@@ -54,37 +32,87 @@ func main() {
 				time.Sleep(time.Second)
 			} else {
 				log.Printf("Finished calibration")
-				state = Landed
 				firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedGreen))
+				break
 			}
-		case Landed:
-			err = firmware.Observe()
-		case TakeoffStart:
-			firmware.Desired.Altitude = TakeoffAltitude
-			firmware.Desired.PRY = godrone.PRY{}
-			state = Takeoff
-		case Takeoff:
-			err = firmware.Fly()
-			if firmware.Actual.Altitude >= firmware.Desired.Altitude {
-				state = Fly
-			}
-		case Fly:
-			err = firmware.Fly()
-		case Land:
-			firmware.Desired.Altitude = 0
-			firmware.Desired.PRY = godrone.PRY{}
-			err = firmware.Fly()
-			if firmware.Actual.Altitude <= LandAltitude {
-				state = Landed
-			}
-		default:
-			panic(fmt.Errorf("Unhandled state: %s", state))
 		}
+	}
+	calibrate()
+	for {
+		select {
+		case req := <-reqCh:
+			var res Response
+			res.Actual = firmware.Actual
+			res.Desired = firmware.Desired
+			res.Time = time.Now()
+			if req.SetDesired != nil {
+				firmware.Desired = *req.SetDesired
+			}
+			if req.Calibrate {
+				calibrate()
+			}
+			req.Response <- res
+		default:
+		}
+		var err error
+		if firmware.Desired.Altitude > 0 {
+			err = firmware.Fly()
+		} else {
+			err = firmware.Observe()
+		}
+		fmt.Printf("%s\n", firmware.Actual)
 		if err != nil {
 			log.Printf("%s", err)
 		}
 	}
 }
 
-func serveHttp() {
+type Request struct {
+	SetDesired *godrone.Placement
+	Calibrate  bool
+	Response   chan Response
 }
+
+type Response struct {
+	Time    time.Time         `json:"time"`
+	Actual  godrone.Placement `json:"actual,omitempty"`
+	Desired godrone.Placement `json:"desired,omitempty"`
+}
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+func serveHttp(reqCh chan<- Request) {
+	err := http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Printf("Failed to upgrade ws: %s", err)
+			return
+		}
+		defer conn.Close()
+		for {
+			var req Request
+			if err := conn.ReadJSON(&req); err != nil {
+				log.Printf("Failed to read from ws: %s", err)
+				return
+			}
+			req.Response = make(chan Response)
+			reqCh <- req
+			res := <-req.Response
+			if err := conn.WriteJSON(res); err != nil {
+				log.Printf("Failed to write to ws: %s", err)
+				return
+			}
+		}
+	}))
+	if err != nil {
+		log.Fatalf("Failed to serve http: %s", err)
+	}
+}
+
+type Client struct{}

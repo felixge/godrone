@@ -4,18 +4,14 @@ import "math"
 
 import "time"
 
-const (
-	rotationBand  = 0.3
-	throttleHover = 0.45
-	throttleMin   = 0.1
-	throttleMax   = 1 - rotationBand
-)
-
 type Controller struct {
-	Pitch    PID
-	Roll     PID
-	Yaw      PID
-	Altitude PID
+	RotationBand  float64
+	ThrottleHover float64
+	ThrottleMin   float64
+	Pitch         PID
+	Roll          PID
+	Yaw           PID
+	Altitude      PID
 }
 
 func (c *Controller) Control(actual, desired Placement, dt time.Duration) [4]float64 {
@@ -26,7 +22,7 @@ func (c *Controller) Control(actual, desired Placement, dt time.Duration) [4]flo
 		yawOut   = c.Yaw.Update(actual.Yaw, desired.Yaw, dt)
 		altOut   = c.Altitude.Update(actual.Altitude, desired.Altitude, dt)
 	)
-	throttle := math.Max(throttleMin, math.Min(throttleMax, throttleHover+altOut))
+	throttle := math.Max(c.ThrottleMin, math.Min(1-c.RotationBand, c.ThrottleMin+altOut))
 	speeds = [4]float64{
 		throttle + clipBand(+rollOut+pitchOut+yawOut, rotationBand),
 		throttle + clipBand(-rollOut+pitchOut-yawOut, rotationBand),

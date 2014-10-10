@@ -43,15 +43,17 @@ func NewFirmware() (*Firmware, error) {
 		Filter: Filter{
 			GyroGain:  0.98,
 			AccGain:   0.02,
-			SonarGain: 0.1,
+			SonarGain: 0.2,
 			SonarMax:  4,
 		},
 		// yes, more experimenting :)
 		Controller: &Controller{
-			Pitch:    PID{P: 0.02, I: 0.0001, D: 0},
-			Roll:     PID{P: 0.02, I: 0.0001, D: 0},
-			Yaw:      PID{P: 0.02, I: 0, D: 0},
-			Altitude: PID{P: 0.2, I: 0.05, D: 0.05},
+			RotationBand: 0.3,
+			ThrottleMin:  0.4,
+			Pitch:        PID{P: 0.02, I: 0.01, D: 0},
+			Roll:         PID{P: 0.02, I: 0.01, D: 0},
+			Yaw:          PID{P: 0.02, I: 0, D: 0},
+			Altitude:     PID{P: 0.1, I: 0.2, D: 0.01},
 		},
 	}, nil
 }
