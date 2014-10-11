@@ -75,13 +75,13 @@ type Firmware struct {
 	Calibration Calibration
 	// Navdata holds the navdata read by the tick function.
 	Navdata Navdata
-	// Sensors holds the sensor values calculated by the Fly function
+	// Sensors holds the sensor values calculated by the Control function
 	Sensors Sensors
 	// Filter estimates the placement of the drone based on navdata.
 	Filter Filter
 	// Controller tries to achieve the desired placement using the actuators.:w
 	Controller *Controller
-	// Motors holds the motor speeds applied by the Fly function
+	// Motors holds the motor speeds applied by the Control function
 	Motors [4]float64
 	// Actual holds the placement of the drone as estimated by the filter.
 	Actual Placement
@@ -101,9 +101,9 @@ func (f *Firmware) Observe() error {
 	return nil
 }
 
-// Fly calls Observe and uses the gathered data to manipulate the drones
+// Control calls Observe and uses the gathered data to manipulate the drones
 // actuators in order to achieve the desired placement.
-func (f *Firmware) Fly() error {
+func (f *Firmware) Control() error {
 	if err := f.Observe(); err != nil {
 		return err
 	}

@@ -55,7 +55,7 @@ func main() {
 		}
 		var err error
 		if firmware.Desired.Altitude > 0 {
-			err = firmware.Fly()
+			err = firmware.Control()
 		} else {
 			err = firmware.Observe()
 		}
