@@ -21,5 +21,7 @@ func main() {
 		dir = filepath.Join(filepath.Dir(srcFile), "public")
 	}
 	log.Printf("Listening on: %s", *addr)
-	http.ListenAndServe(*addr, http.FileServer(http.Dir(dir)))
+	if err := http.ListenAndServe(*addr, http.FileServer(http.Dir(dir))); err != nil {
+		log.Fatalf("%s", err)
+	}
 }
