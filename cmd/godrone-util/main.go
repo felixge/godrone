@@ -3,20 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
-	"time"
-)
-import goftp "github.com/jlaffaye/goftp"
-import "io/ioutil"
-
-import "log"
-import "net"
-
-import (
+	"io/ioutil"
+	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"time"
+
+	"github.com/jlaffaye/ftp"
 )
-import "path/filepath"
 
 var (
 	addr = flag.String("addr", "192.168.1.1", "Addr of the drone.")
@@ -37,12 +34,19 @@ const (
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-	flag.Parse()
+
 	tmpDir, err := ioutil.TempDir("", tmpDirPrefix)
 	if err != nil {
 		log.Fatalf("Could not create tmp dir: %s", err)
 	}
 	defer os.RemoveAll(tmpDir)
+
+	flag.Parse()
+	if flag.NArg() == 0 {
+		fmt.Fprintln(os.Stderr, "Expected a command: run")
+		return
+	}
+
 	switch cmd := flag.Arg(0); cmd {
 	case "run":
 		pkg := flag.Arg(1)
@@ -88,7 +92,7 @@ func run(pkg, buildDir string) {
 	}
 	defer file.Close()
 	log.Printf("Establishing ftp connection")
-	ftp, err := goftp.Connect(net.JoinHostPort(*addr, ftpPort))
+	ftp, err := ftp.Connect(net.JoinHostPort(*addr, ftpPort))
 	if err != nil {
 		log.Fatalf("FTP connect error: %s", err)
 	}
