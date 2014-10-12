@@ -73,7 +73,8 @@ func run(pkg, buildDir string) {
 	log.Printf("Establishing telnet connection")
 	telnet, err := DialTelnet(net.JoinHostPort(*addr, telnetPort))
 	if err != nil {
-		log.Fatalf("Telnet connect error: %s", err)
+		log.Printf("Telnet connect error: %s", err)
+		log.Fatal("Check to be sure that your computer is attached to the drone's wifi network.")
 	}
 	defer telnet.Close()
 	log.Printf("Killing firmware (restart drone to get it back)")
