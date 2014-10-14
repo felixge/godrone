@@ -110,7 +110,7 @@ func (t *Telnet) discardUntil(delim string, to time.Duration) error {
 	if err != nil {
 		return telnetError{error: err, read: buf.Bytes()}
 	}
-	return err
+	return nil
 }
 
 var noDeadline = time.Time{}
@@ -124,8 +124,8 @@ func (t *Telnet) copyUntil(dst io.Writer, delim string, to time.Duration) error 
 	buf := ""
 	for {
 		if to != time.Duration(0) {
-			t.conn.SetDeadline(time.Now().Add(to))
-			defer t.conn.SetDeadline(noDeadline)
+			t.conn.SetReadDeadline(time.Now().Add(to))
+			defer t.conn.SetReadDeadline(noDeadline)
 		}
 		b, err := t.conn.ReadByte()
 		if err != nil {
@@ -146,7 +146,7 @@ func (t *Telnet) copyUntil(dst io.Writer, delim string, to time.Duration) error 
 
 // waitPrompt waits for the prompt to show.
 func (t *Telnet) waitPrompt() error {
-	return t.discardUntil(t.prompt, 1*time.Second)
+	return t.discardUntil(t.prompt, 5*time.Second)
 }
 
 // Close closes the connection.
