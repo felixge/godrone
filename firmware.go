@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// We know the navboard runs at 200 Hz. Assuming that the navboards
+// We know the navboard runs at 200 Hz. Assuming that the navboard's
 // internal clock is more accurate than the system clock, we should get
 // better precision from hardcoding this assumption.
 var dt = time.Second / 200
@@ -75,13 +75,13 @@ type Firmware struct {
 	Calibration Calibration
 	// Navdata holds the navdata read by the tick function.
 	Navdata Navdata
-	// Sensors holds the sensor values calculated by the Control function
+	// Sensors holds the sensor values calculated by the Control function.
 	Sensors Sensors
 	// Filter estimates the placement of the drone based on navdata.
 	Filter Filter
-	// Controller tries to achieve the desired placement using the actuators.:w
+	// Controller tries to achieve the desired placement using the actuators.
 	Controller *Controller
-	// Motors holds the motor speeds applied by the Control function
+	// Motors holds the motor speeds applied by the Control function.
 	Motors [4]float64
 	// Actual holds the placement of the drone as estimated by the filter.
 	Actual Placement
