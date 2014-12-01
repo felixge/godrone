@@ -16,29 +16,22 @@ battery, and it's very easy to fix your drone if you crash it.
 Download
 --------
 
-The latest version is |release|. You can download it here:
-
-* **OSX:** `Universal (32 and 64-bit) <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-darwin-386.zip>`_
-* **Windows:** `Universal (32 and 64-bit) <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-windows-386.zip>`_
-* **Linux:** `32-bit <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-linux-386.tar.gz>`_ | `64-bit <https://github.com/felixge/godrone/releases/download/v0.1.0/godrone-v0.1.0-linux-amd64.tar.gz>`_
+There are currently no downloads available. You need to build from source.
 
 Install
 -------
 
-1. Download one of the archives from above.
-2. Extract the archive you downloaded.
-3. Place your drone on a level surface, ready for takeoff, and connect the
-   battery.
-4. Connect your computer to your drone's WiFi network.
-5. Double-click the ``deploy`` binary inside the folder extracted from the
-   archive.
-
-That's it! The ``deploy`` binary will upload GoDrone via FTP and then telnet
-into your drone to start it.
+See :ref:`installing from source <isource>`.
 
 Uninstall
 ---------
 
-If you want the original firmware back, simply reconnect the battery. The
-install is currently not permanent. This may change if the firmware becomes
-more mature in the future.
+The ``go get`` install process simply adds some files to your ``$GOPATH``
+directory.
+
+When you run ``godrone-util``, it stops the running copy of the factory
+firmware, copies the a new executable onto the drone without touching
+the factory firmware, and runs it.
+
+If you want the original firmware back, simply disconnect and
+reconnect the battery. The install is not permanent.

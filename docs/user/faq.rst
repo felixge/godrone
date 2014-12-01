@@ -37,10 +37,8 @@ tracker once there is consensus.
 What happens if the drone goes out of WiFi range?
 -------------------------------------------------
 
-To prevent the drone from flying into outer space, it will shut off the motors
-if the network connection gets interrupted for longer than the configured
-``ControlTimeout``. A more graceful approach to landing will be implemented in
-the future.
+It could theoretically go up forever (`To the universe, and beyond!`).
+So don't let that happen. Fly indoors until we've implemented a fail-safe of some sort.
 
 Does GoDrone provide any features not provided by the official firmware?
 ------------------------------------------------------------------------
@@ -107,7 +105,7 @@ altitude and the situation.
 
 Considering that stabilization cannot be guaranteed due to environmental
 factors to begin with, it will be interesting to see if drone vendors will make
-similar compromises for reducing the costs of software development , or if
+similar compromises for reducing the costs of software development, or if
 governments will provide detailed software architecture regulations for
 commercial drones.
 
@@ -135,7 +133,7 @@ written in C/C++, and use rather archaic UI technology.
 Where can I get the source code?
 --------------------------------
 
-The source code is available on GitHub. https://github.com/felixge/godrone
+The source code is available on GitHub: https://github.com/felixge/godrone
 
 What license is GoDrone released under?
 ---------------------------------------
