@@ -3,7 +3,6 @@
 var minAltitude = 0.3;
 var pause = false;
 var emergency = false;
-var chartIndex = 0;
 var colors = ['red', 'black'];
 var desired = {pitch: 0, roll: 0, yaw: 0, altitude: 0};
 var charts = [
@@ -37,15 +36,19 @@ var charts = [
 ];
 
 var chartData = [];
-var dygraph = new Dygraph(document.getElementById('chart'), charts[chartIndex].data, {
-  drawPoints: true,
-  showRoller: true,
-  labels: charts[chartIndex].labels,
-  valueRange: charts[chartIndex].valueRange,
-  title: charts[chartIndex].title,
-  colors: charts[chartIndex].colors,
-})
-var emdiv = document.getElementById("emergency")
+var graphs = [];
+for (var i = 0; i < charts.length; i++) {
+  graphs[i] = new Dygraph(document.getElementById('chart'+i), charts[i].data, {
+  	drawPoints: true,
+  	showRoller: true,
+  	labels: charts[i].labels,
+  	valueRange: charts[i].valueRange,
+  	title: charts[i].title,
+  	colors: charts[i].colors,
+	})
+}
+
+var emdiv = document.getElementById("emergency");
 
 function Conn(options) {
   var ws = new WebSocket(options.url);
@@ -100,8 +103,9 @@ function Conn(options) {
       data.desired.Yaw,
     ]);
     if (!pause) {
-      var chart = charts[chartIndex];
-      dygraph.updateOptions({file: chart.data, dateWindow: [time-10000, time]});
+	for (var i = 0; i < graphs.length; i++) {
+          graphs[i].updateOptions({file: charts[i].data, dateWindow: [time-10000, time]});
+	}
     }
 
     var latency = Date.now() - lastSend;
@@ -169,7 +173,6 @@ var KEYS = {
   a: 65,
   d: 68,
   p: 80,
-  x: 88,
 };
 var isDown = {};
 
@@ -183,19 +186,6 @@ window.onkeydown = function(e) {
       break;
     case KEYS.p:
       pause = !pause;
-      break;
-    case KEYS.x:
-      chartIndex++;
-      if (chartIndex >= charts.length) {
-        chartIndex = 0;
-      }
-      var chart = charts[chartIndex];
-      dygraph.updateOptions({
-        file: chart.data,
-        labels: chart.labels,
-        valueRange: chart.valueRange,
-        title: chart.title,
-      });
       break;
   }
 }
