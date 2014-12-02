@@ -13,9 +13,3 @@ type PRY struct {
 func (p PRY) String() string {
 	return fmt.Sprintf("%7.2f P %7.2f R %7.2f Y", p.Pitch, p.Roll, p.Yaw)
 }
-
-func (p1 PRY) Equal(p2 PRY) bool {
-	return p1.Pitch == p2.Pitch &&
-		p1.Roll == p2.Roll &&
-		p1.Yaw == p2.Yaw
-}
