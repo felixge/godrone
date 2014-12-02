@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Development
+-----------
+
+The current software is under development and does not have a version number.
+
 0.1.0
 -----
 

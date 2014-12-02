@@ -1,3 +1,5 @@
+.. _isource:
+
 Install from source
 ===================
 
@@ -6,8 +8,7 @@ OSX & Linux
 
 Before getting started:
 
-* Installed the latest version of `Go <http://golang.org/doc/install>`_ (1.2 as
-  of writing this)
+* Installed the latest version of `Go <https://golang.org/doc/install>`_
 * Configure a ``$GOPATH`` (e.g. via adding ``export GOPATH="${HOME}/go"`` to
   your ``~/.profile``)
 * Add ``$GOPATH/bin`` to your ``$PATH`` (e.g. via adding ``export
@@ -30,20 +31,13 @@ only takes a minute. The fastest way is this::
 
 If this doesn't work for you for some reason, you may try to follow Dave
 Cheney's `guide for cross compiling Go
-<http://dave.cheney.net/2012/09/08/an-introduction-to-cross-compilation-with-go>`_
+<http://dave.cheney.net/2013/07/09/an-introduction-to-cross-compilation-with-go-1-1>`_
 instead.
 
-With Go installed and ready, download GoDrone::
+Download, compile, and install GoDrone into ``$GOPATH/bin``: ::
 
-    $ dst="$(go env GOPATH)/src/github.com/felixge"
-    $ mkdir -p "${dst}"
-    $ cd "${dst}"
-    $ git clone git@github.com:felixge/godrone.git
-    $ cd godrone
-
-Now you should be ready to build godrone and upload it to your drone::
-
-    $ make
+    $ go get github.com/felixge/godrone/cmd/godrone-util
+    $ go get github.com/felixge/godrone/cmd/godrone-ui
 
 Windows
 -------
