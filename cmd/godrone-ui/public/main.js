@@ -45,7 +45,11 @@ var dygraph = new Dygraph(document.getElementById('chart'), charts[chartIndex].d
   title: charts[chartIndex].title,
   colors: charts[chartIndex].colors,
 })
+
 var emdiv = document.getElementById("emergency")
+
+// So you can still see the graphs: clicking on the emergency box makes it disappear again.
+emdiv.onclick = function() { emdiv.style.display = "none"; }
 
 function Conn(options) {
   var ws = new WebSocket(options.url);
@@ -170,6 +174,7 @@ var KEYS = {
   d: 68,
   p: 80,
   x: 88,
+  question: 191,
 };
 var isDown = {};
 
@@ -177,6 +182,14 @@ window.onkeydown = function(e) {
   console.log(e.keyCode);
   isDown[e.keyCode] = true;
   switch (e.keyCode) {
+  case KEYS.question:
+      var helpdiv = document.getElementById("help")
+      if (helpdiv.style.display == "none") {
+	  helpdiv.style.display = "inherit";
+      } else {
+	  helpdiv.style.display = "none";
+      }
+      break;
     case KEYS.esc:
       emergency = true;
       emdiv.style.display = "inherit";

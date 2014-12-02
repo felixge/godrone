@@ -1,15 +1,21 @@
 <link rel="stylesheet" type="text/css" href="main.css" />
 <body>
 <div id="chart"></div>
-<div id="emergency" style="margin-left:auto;
-			   margin-right:auto;
-			   width:50%;
-			   position: relative;
-			   top: 50%;
-			   transform: translateY(-50%);
-			   background-color:rgb(255,0,0);
-			   display:none">
+<div id="emergency" class="centerbox" style="width:50%; background-color:rgb(255,0,0); display:none">
   <h1 align="center">Emergency declared!</h1><p align="center">Reload this page to start flying again.</p><p>&nbsp</p>
+</div>
+<div id="help" class="centerbox" style="width:80%; border-color:rgb(0,0,0); border-style:solid; border-width:1px; background-color:rgb(255,255,255); display:none">
+  <ul>
+    <li> ESC: Emergency. Stop all motors.</li>
+    <li> &#8593; / &#8595; Altitude</li>
+    <li> &#8592; / &#8594; Yaw</li>
+    <li> a / d: Roll</li>
+    <li> w / s: Pitch</li>
+    <li> c: Calibrate (drone must be on a level surface)</li>
+    <li> p: Pause the graph</li>
+    <li> x: Rotate through graphs</li>
+    <li> ?: Open and close this help window.</li>
+  </ul>
 </div>
 </body>
 <script src="dygraph.js"></script>
