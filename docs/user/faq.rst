@@ -37,7 +37,7 @@ tracker once there is consensus.
 What happens if the drone goes out of WiFi range?
 -------------------------------------------------
 
-It could theoretically go up forever (`To the universe, and beyond!`).
+It could theoretically go up forever (`To infinity, and beyond!`).
 So don't let that happen. Fly indoors until we've implemented a fail-safe of some sort.
 
 Does GoDrone provide any features not provided by the official firmware?
