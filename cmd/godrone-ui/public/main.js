@@ -45,6 +45,7 @@ var dygraph = new Dygraph(document.getElementById('chart'), charts[chartIndex].d
   title: charts[chartIndex].title,
   colors: charts[chartIndex].colors,
 })
+var emdiv = document.getElementById("emergency")
 
 function Conn(options) {
   var ws = new WebSocket(options.url);
@@ -178,6 +179,7 @@ window.onkeydown = function(e) {
   switch (e.keyCode) {
     case KEYS.esc:
       emergency = true;
+      emdiv.style.display = "inherit";
       break;
     case KEYS.p:
       pause = !pause;
