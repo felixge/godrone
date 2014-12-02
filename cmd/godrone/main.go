@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"time"
@@ -9,7 +10,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var verbose = flag.Int("verbose", 0, "verbosity: 1=some 2=lots")
+
 func main() {
+	flag.Parse()
+
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 	log.Printf("Godrone started")
 	firmware, err := godrone.NewFirmware()
@@ -45,12 +50,20 @@ func main() {
 			res.Desired = firmware.Desired
 			res.Time = time.Now()
 			if req.SetDesired != nil {
+				if !firmware.Desired.Equal(*req.SetDesired) {
+					if Verbose() {
+						log.Print("New desired attitude:", firmware.Desired)
+					}
+				}
 				firmware.Desired = *req.SetDesired
 			}
 			if req.Calibrate {
 				calibrate()
 			}
 			req.Response <- res
+			if reallyVerbose() {
+				log.Print("Request:", req, "Response:", res)
+			}
 		default:
 		}
 		var err error
@@ -114,3 +127,6 @@ func serveHttp(reqCh chan<- Request) {
 }
 
 type Client struct{}
+
+func reallyVerbose() bool { return *verbose > 1 }
+func Verbose() bool       { return *verbose > 0 }

@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "192.168.1.1", "Addr of the drone.")
+	addr    = flag.String("addr", "192.168.1.1", "Addr of the drone.")
+	verbose = flag.Int("verbose", 0, "Verbose flag; values gt 0 are passed onwards to the program on the drone.")
 )
 
 const (
@@ -115,16 +116,22 @@ func run(pkg, buildDir string) {
 	if out, err := telnet.Exec(fmt.Sprintf("date -s '%s'", now)); err != nil {
 		log.Fatalf("Failed to sync clock: %s: %s", err, out)
 	}
-	log.Printf("Starting %s", godroneBin)
+	log.Printf("Starting target program")
 	if out, err := telnet.Exec("cd '" + path.Join(ftpDir, godroneDir) + "'"); err != nil {
-		log.Fatalf("Failed to change directory: %s: %s", err, out)
+		log.Fatalf("Failed to change directory: %v: %v", err, out)
 	}
 	if out, err := telnet.Exec("chmod +x '" + godroneBin + "'"); err != nil {
-		log.Fatalf("Failed to make godrone executable: %s: %s", err, out)
+		log.Fatalf("Failed to make godrone executable: %v: %v", err, out)
 	}
-	log.Printf("Running %s", godroneBin)
-	if err := telnet.ExecRawWriter("./"+godroneBin, os.Stdout); err != nil {
-		log.Printf("Failed to run %s: %s", godroneBin, err)
+
+	cmd := fmt.Sprintf("./%v", godroneBin)
+	if *verbose != 0 {
+		cmd += fmt.Sprintf(" -verbose=%v", *verbose)
+	}
+
+	log.Printf("Running %v", cmd)
+	if err := telnet.ExecRawWriter(cmd, os.Stdout); err != nil {
+		log.Printf("Failed to run %v: %v", godroneBin, err)
 	}
 	telnet.Close()
 }

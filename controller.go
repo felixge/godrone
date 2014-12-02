@@ -1,8 +1,9 @@
 package godrone
 
-import "math"
-
-import "time"
+import (
+	"math"
+	"time"
+)
 
 type Controller struct {
 	RotationBand  float64
@@ -15,21 +16,19 @@ type Controller struct {
 }
 
 func (c *Controller) Control(actual, desired Placement, dt time.Duration) [4]float64 {
-	var speeds [4]float64
-	var (
-		pitchOut = c.Roll.Update(actual.Pitch, desired.Pitch, dt)
-		rollOut  = c.Roll.Update(actual.Roll, desired.Roll, dt)
-		yawOut   = c.Yaw.Update(actual.Yaw, desired.Yaw, dt)
-		altOut   = c.Altitude.Update(actual.Altitude, desired.Altitude, dt)
-	)
+	pitchOut := c.Roll.Update(actual.Pitch, desired.Pitch, dt)
+	rollOut := c.Roll.Update(actual.Roll, desired.Roll, dt)
+	yawOut := c.Yaw.Update(actual.Yaw, desired.Yaw, dt)
+	altOut := c.Altitude.Update(actual.Altitude, desired.Altitude, dt)
+
 	throttle := math.Max(c.ThrottleMin, math.Min(1-c.RotationBand, c.ThrottleMin+altOut))
-	speeds = [4]float64{
+
+	return [4]float64{
 		throttle + clipBand(+rollOut+pitchOut+yawOut, c.RotationBand),
 		throttle + clipBand(-rollOut+pitchOut-yawOut, c.RotationBand),
 		throttle + clipBand(-rollOut-pitchOut+yawOut, c.RotationBand),
 		throttle + clipBand(+rollOut-pitchOut-yawOut, c.RotationBand),
 	}
-	return speeds
 }
 
 func clipBand(val, band float64) float64 {
