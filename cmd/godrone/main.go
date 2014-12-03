@@ -50,7 +50,7 @@ func main() {
 			res.Desired = firmware.Desired
 			res.Time = time.Now()
 			if req.SetDesired != nil {
-				if !firmware.Desired.Equal(*req.SetDesired) {
+				if firmware.Desired != *req.SetDesired {
 					if Verbose() {
 						log.Print("New desired attitude:", firmware.Desired)
 					}
