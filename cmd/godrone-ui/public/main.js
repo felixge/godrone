@@ -152,8 +152,13 @@ function Conn(options) {
   };
 }
 
+var drone = 'ws://192.168.1.1'
+if (window.location.search != "") {
+    drone = "ws://"+window.location.search.substring(1)
+}
+
 new Conn({
-  url: 'ws://192.168.1.1',
+  url: drone,
   hz: 30,
 });
 
