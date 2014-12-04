@@ -61,10 +61,9 @@ func main() {
 			res.Desired = firmware.Desired
 			res.Time = time.Now()
 			if req.SetDesired != nil {
-				if firmware.Desired != *req.SetDesired {
-					if Verbose() {
-						log.Print("New desired attitude:", firmware.Desired)
-					}
+				// Log changes to desired
+				if Verbose() && firmware.Desired != *req.SetDesired {
+					log.Print("New desired attitude:", firmware.Desired)
 				}
 				firmware.Desired = *req.SetDesired
 			}
@@ -73,7 +72,7 @@ func main() {
 			}
 			req.Response <- res
 			if reallyVerbose() {
-				log.Print("Request:", req, "Response:", res)
+				log.Print("Request: ", req, "Response: ", res)
 			}
 		default:
 		}
@@ -81,6 +80,13 @@ func main() {
 		if firmware.Desired.Altitude > 0 {
 			err = firmware.Control()
 		} else {
+			// Something subtle to note here: When the motors are running,
+			// but then desired altitude goes to zero (for instance due to
+			// the emergency command in the UI) we end up here.
+			//
+			// We never actually send a motors=0 command. Instead we count on
+			// the failsafe behavior of the motorboard, which puts the motors to
+			// zero if it does not receive a new motor command soon enough.
 			err = firmware.Observe()
 		}
 		if err != nil {
@@ -111,6 +117,7 @@ var upgrader = websocket.Upgrader{
 
 func serveHttp(reqCh chan<- Request) {
 	err := http.ListenAndServe(*addr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		first := true
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Printf("Failed to upgrade ws: %s", err)
@@ -123,6 +130,15 @@ func serveHttp(reqCh chan<- Request) {
 				log.Printf("Failed to read from ws: %s", err)
 				return
 			}
+
+			// On the first request from the websocket, we ignore what they
+			// asked for. This way, they find out our current altitude, and
+			// can sync up to us, thereby not causing a crash on reconnect.
+			if first {
+				req.SetDesired = nil
+				first = false
+			}
+
 			req.Response = make(chan Response)
 			reqCh <- req
 			res := <-req.Response
