@@ -3,7 +3,6 @@
 var minAltitude = 0.3;
 var pause = false;
 var emergency = false;
-var chartIndex = 0;
 var colors = ['red', 'black'];
 var desired = {pitch: 0, roll: 0, yaw: 0, altitude: 0};
 var charts = [
@@ -37,18 +36,27 @@ var charts = [
 ];
 
 var chartData = [];
-var dygraph = new Dygraph(document.getElementById('chart'), charts[chartIndex].data, {
-  drawPoints: true,
-  showRoller: true,
-  labels: charts[chartIndex].labels,
-  valueRange: charts[chartIndex].valueRange,
-  title: charts[chartIndex].title,
-  colors: charts[chartIndex].colors,
-})
-var emdiv = document.getElementById("emergency")
+var graphs = [];
+for (var i = 0; i < charts.length; i++) {
+  graphs[i] = new Dygraph(document.getElementById('chart'+i), charts[i].data, {
+  	drawPoints: true,
+  	showRoller: true,
+  	labels: charts[i].labels,
+  	valueRange: charts[i].valueRange,
+  	title: charts[i].title,
+  	colors: charts[i].colors,
+	})
+}
+
+var emdiv = document.getElementById("emergency");
+/* Make it hide itself again if you click on it, so you can see the graphs. */
+emdiv.onclick = function() {
+  emdiv.style.display = "none";
+}
 
 function Conn(options) {
   var ws = new WebSocket(options.url);
+  var first = true;
   var reconnect = function() {
     ws.onopen = function() {};
     ws.onmessage = function() {};
@@ -100,60 +108,84 @@ function Conn(options) {
       data.desired.Yaw,
     ]);
     if (!pause) {
-      var chart = charts[chartIndex];
-      dygraph.updateOptions({file: chart.data, dateWindow: [time-10000, time]});
+	for (var i = 0; i < graphs.length; i++) {
+          graphs[i].updateOptions({file: charts[i].data, dateWindow: [time-10000, time]});
+	}
+    }
+    if (first) {
+        // on the first response, set our desired alt to the drone's current desired alt,
+        // so that we can reconnect to a hovering drone without crashing it.
+        first = false;
+        desired.pitch = 0;
+        desired.roll = 0;
+        desired.yaw = 0;
+        desired.altitude = data.desired.Altitude;
     }
 
     var latency = Date.now() - lastSend;
     var timeout = Math.max(0, 1000/options.hz-latency);
     lastSend = Date.now();
     setTimeout(function() {
-      var msg = {setDesired: desired};
+      var msg = {};
+      var newDesired = { pitch: desired.pitch, roll: desired.roll,
+                         yaw: desired.yaw, altitude: desired.altitude };
       if (emergency) {
-        desired = {pitch: 0, roll: 0, yaw: 0, altitude: 0};
+        newDesired = {pitch: 0, roll: 0, yaw: 0, altitude: 0};
       } else {
         var altSpeed = 0.5/options.hz;
         var yawSpeed = 10/options.hz;
         var speed = 3;
         if (isDown[KEYS.w]) {
-          desired.pitch = -speed;
+          newDesired.pitch = -speed;
         } else if (isDown[KEYS.s]) {
-          desired.pitch = speed;
+          newDesired.pitch = speed;
         } else {
-          desired.pitch = 0;
+          newDesired.pitch = 0;
         }
         if (isDown[KEYS.a]) {
-          desired.roll = -speed;
+          newDesired.roll = -speed;
         } else if (isDown[KEYS.d]) {
-          desired.roll = speed;
+          newDesired.roll = speed;
         } else {
-          desired.roll = 0;
+          newDesired.roll = 0;
         }
         if (isDown[KEYS.left]) {
-          desired.yaw += speed;
+          newDesired.yaw += speed;
         } else if (isDown[KEYS.right]) {
-          desired.yaw -= speed;
+          newDesired.yaw -= speed;
         }
         if (isDown[KEYS.up]) {
-          desired.altitude += altSpeed;
-          desired.altitude = Math.max(desired.altitude, minAltitude);
+          newDesired.altitude += altSpeed;
+          newDesired.altitude = Math.max(newDesired.altitude, minAltitude);
         } else if (isDown[KEYS.down]) {
-          desired.altitude -= altSpeed;
-          if (desired.altitude < minAltitude) {
-            desired.altitude = 0;
+          newDesired.altitude -= altSpeed;
+          if (newDesired.altitude < minAltitude) {
+            newDesired.altitude = 0;
           }
         }
         if (isDown[KEYS.c]) {
           msg.calibrate = true;
         }
       }
+      if (emergency || newDesired.pitch != desired.pitch ||
+          newDesired.roll != desired.roll ||
+          newDesired.yaw != desired.yaw ||
+          newDesired.altitude != desired.altitude) {
+        msg.setDesired = newDesired;
+        desired = newDesired;
+      }
       ws.send(JSON.stringify(msg));
     }, timeout);
   };
 }
 
+var drone = 'ws://192.168.1.1'
+if (window.location.search != "") {
+    drone = "ws://"+window.location.search.substring(1)
+}
+
 new Conn({
-  url: 'ws://192.168.1.1',
+  url: drone,
   hz: 30,
 });
 
@@ -169,12 +201,10 @@ var KEYS = {
   a: 65,
   d: 68,
   p: 80,
-  x: 88,
 };
 var isDown = {};
 
 window.onkeydown = function(e) {
-  console.log(e.keyCode);
   isDown[e.keyCode] = true;
   switch (e.keyCode) {
     case KEYS.esc:
@@ -183,19 +213,6 @@ window.onkeydown = function(e) {
       break;
     case KEYS.p:
       pause = !pause;
-      break;
-    case KEYS.x:
-      chartIndex++;
-      if (chartIndex >= charts.length) {
-        chartIndex = 0;
-      }
-      var chart = charts[chartIndex];
-      dygraph.updateOptions({
-        file: chart.data,
-        labels: chart.labels,
-        valueRange: chart.valueRange,
-        title: chart.title,
-      });
       break;
   }
 }

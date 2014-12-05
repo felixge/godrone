@@ -16,6 +16,11 @@ const (
 
 var packetHeader = []byte{packetSize, 0x00}
 
+// A NavdataReader is an interface that allows is to make a MockNavboard.
+type NavdataReader interface {
+	Read() (data Navdata, err error)
+}
+
 // OpenNavboard opens the navboard tty file at the given location and returns a
 // Navboard struct on success.
 func OpenNavboard(tty string) (*Navboard, error) {

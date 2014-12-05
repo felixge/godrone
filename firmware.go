@@ -2,6 +2,7 @@ package godrone
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"time"
 )
@@ -23,9 +24,16 @@ func NewFirmware() (*Firmware, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open navboard: %s", err)
 	}
+	return NewCustomFirmware(navboard, motorboard)
+}
+
+// NewCustomFirmware returns the same defaults as NewFirmware, but allows
+// the caller to provide their own MotorLedWriter and NavdataReader
+// implementations.
+func NewCustomFirmware(n NavdataReader, m MotorLedWriter) (*Firmware, error) {
 	return &Firmware{
-		Navboard:   navboard,
-		Motorboard: motorboard,
+		Navboard:   n,
+		Motorboard: m,
 		// found by experimenting :)
 		// overwritten by calibration (except for gyro/sonar scale)
 		Calibration: Calibration{
@@ -65,10 +73,10 @@ func NewFirmware() (*Firmware, error) {
 // @TODO Many interesting things could be achieved by turning some of the
 // fields below into integer types.
 type Firmware struct {
-	// Navboard holds the navboard.
-	Navboard *Navboard
-	// Motorboard holds the motorboard.
-	Motorboard *Motorboard
+	// Navboard holds the navboard interface.
+	Navboard NavdataReader
+	// Motorboard holds the motorboard interface.
+	Motorboard MotorLedWriter
 	// Calibrator holds the calibrator.
 	Calibrator Calibrator
 	// Calibration holds the current calibration.
@@ -123,11 +131,15 @@ func (f *Firmware) Calibrate() error {
 // Close cleans up resources allocated by the firmware.
 func (f *Firmware) Close() error {
 	var errors []string
-	if err := f.Motorboard.Close(); err != nil {
-		errors = append(errors, err.Error())
+	if mb, ok := f.Motorboard.(io.Closer); ok {
+		if err := mb.Close(); err != nil {
+			errors = append(errors, err.Error())
+		}
 	}
-	if err := f.Navboard.Close(); err != nil {
-		errors = append(errors, err.Error())
+	if nb, ok := f.Navboard.(io.Closer); ok {
+		if err := nb.Close(); err != nil {
+			errors = append(errors, err.Error())
+		}
 	}
 	if len(errors) == 0 {
 		return nil

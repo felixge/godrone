@@ -35,7 +35,7 @@ type Calibrator struct {
 	MaxStdDev float64
 }
 
-func (c *Calibrator) Calibrate(navboard *Navboard, r *Calibration) error {
+func (c *Calibrator) Calibrate(navboard NavdataReader, r *Calibration) error {
 	var (
 		samples [][6]float64
 		sums    [6]float64

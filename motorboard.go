@@ -11,6 +11,12 @@ const (
 	setLeds   = 0x60
 )
 
+// A MotorLedWriter is an interface that allows us to make a MockMotorboard.
+type MotorLedWriter interface {
+	WriteSpeeds(speeds [4]float64) error
+	WriteLeds(leds [4]LedColor) error
+}
+
 // OpenMotorboard returns a new Motorboard driver.
 func OpenMotorboard(tty string) (*Motorboard, error) {
 	file, err := os.OpenFile(tty, os.O_RDWR, 0)
