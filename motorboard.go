@@ -33,7 +33,7 @@ type Motorboard struct {
 }
 
 // WriteSpeeds writes the command for updating the motor speeds. Speeds must be
-// int the [0,1] range.
+// in the [0,1] range.
 func (m *Motorboard) WriteSpeeds(speeds [4]float64) error {
 	var pwms [4]uint16
 	for i, speed := range speeds {

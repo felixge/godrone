@@ -1,4 +1,9 @@
 # godrone
 
-This is the new version of the code. It doesn't match the docs at godrone.io,
-but this will be fixed ASAP.
+GoDrone is a firmware for the Parrot AR Drone 2.0. It is developed
+by Felix Geisendörfer and others using the Go programming language.
+
+There is no affiliation with Parrot and running this firmware
+may void your warranty.
+
+Please read the docs at: http://www.godrone.io/en/latest/
