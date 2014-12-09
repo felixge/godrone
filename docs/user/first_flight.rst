@@ -31,6 +31,18 @@ Now, you are ready to fly!
  - x: Cycle through the graphs
  - c: Calibrate (drone must be on a level surface)
 
+You may also be able to use a gamepad controller to fly the drone.
+You need to be able to configure your controller to send keys
+in response to up/down/left/right on the left and right joysticks.
+You should also remember to configure a gamepad buttong for "emergency"!
+
+Currently the following configuration is known to work:
+
+- MacOS 10.9.5 (Maverics) with the XBox 360 USB wired controller,
+  the `Tattiebogle driver <http://tattiebogle.net/index.php/ProjectRoot/Xbox360Controller/OsxDriver>`_
+  and `Enjoyable <https://yukkurigames.com/enjoyable/>`_ to translate
+  gamepad input into keyboard input.
+
 Next steps
 ----------
 
