@@ -16,7 +16,8 @@ const (
 
 var packetHeader = []byte{packetSize, 0x00}
 
-// A NavdataReader is an interface that allows is to make a MockNavboard.
+// A NavdataReader is an interface that allows you to make a mock
+// navboard for testing.
 type NavdataReader interface {
 	Read() (data Navdata, err error)
 }

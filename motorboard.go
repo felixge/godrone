@@ -11,7 +11,8 @@ const (
 	setLeds   = 0x60
 )
 
-// A MotorLedWriter is an interface that allows us to make a MockMotorboard.
+// A MotorLedWriter is an interface that allows you to substitute a mock
+// motor board for a real one for testing.
 type MotorLedWriter interface {
 	WriteSpeeds(speeds [4]float64) error
 	WriteLeds(leds [4]LedColor) error
@@ -56,8 +57,7 @@ func (m *Motorboard) WriteSpeeds(speeds [4]float64) error {
 // cmd = 011rrrrx xxxggggx (used to be 011grgrg rgrxxxxx in AR Drone 1.0)
 // see: https://github.com/ardrone/ardrone/blob/master/ardrone/motorboard/motorboard.c#L243
 func (m *Motorboard) WriteLeds(leds [4]LedColor) error {
-	cmd := make([]byte, 2)
-	cmd[0] = setLeds
+	cmd := []byte{setLeds, 0}
 
 	for i, color := range leds {
 		if color == LedRed || color == LedOrange {
