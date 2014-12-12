@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"math"
 	"net/http"
 	"time"
 
@@ -14,7 +15,11 @@ var verbose = flag.Int("verbose", 0, "verbosity: 1=some 2=lots")
 var addr = flag.String("addr", ":80", "Address to listen on (default is \":80\")")
 var dummy = flag.Bool("dummy", false, "Dummy drone: do not open navboard/motorboard.")
 
+const pitchLimit = 30 // degrees
+const rollLimit = 30  // degrees
+
 func main() {
+	cutoutReason := "not calibrated"
 	flag.Parse()
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
@@ -32,8 +37,13 @@ func main() {
 		defer firmware.Close()
 	}
 
+	// This it the channel to send requests to the main control loop.
+	// It is the only way to send and receive info the the
+	// godrone.Firmware object (which is non-concurrent).
 	reqCh := make(chan Request)
+
 	go serveHttp(reqCh)
+	go monitorAngles(reqCh)
 
 	calibrate := func() {
 		for {
@@ -48,18 +58,24 @@ func main() {
 			} else {
 				log.Printf("Finished calibration")
 				firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedGreen))
+				cutoutReason = ""
 				break
 			}
 		}
 	}
 	calibrate()
+	log.Printf("Up, up and away!")
+
+	// This is the main control loop.
 	for {
 		select {
 		case req := <-reqCh:
 			var res Response
+			res.Cutout = cutoutReason
 			res.Actual = firmware.Actual
 			res.Desired = firmware.Desired
 			res.Time = time.Now()
+
 			if req.SetDesired != nil {
 				// Log changes to desired
 				if Verbose() && firmware.Desired != *req.SetDesired {
@@ -67,15 +83,21 @@ func main() {
 				}
 				firmware.Desired = *req.SetDesired
 			}
+			if req.Cutout != "" {
+				cutoutReason = req.Cutout
+				log.Print("Cutout: ", cutoutReason)
+				firmware.Desired.Altitude = 0
+			}
 			if req.Calibrate {
 				calibrate()
 			}
-			req.Response <- res
+			req.response <- res
 			if reallyVerbose() {
 				log.Print("Request: ", req, "Response: ", res)
 			}
 		default:
 		}
+
 		var err error
 		if firmware.Desired.Altitude > 0 {
 			err = firmware.Control()
@@ -98,13 +120,18 @@ func main() {
 type Request struct {
 	SetDesired *godrone.Placement
 	Calibrate  bool
-	Response   chan Response
+	Cutout     string
+
+	response chan Response
 }
+
+func newRequest() Request { return Request{response: make(chan Response)} }
 
 type Response struct {
 	Time    time.Time         `json:"time"`
 	Actual  godrone.Placement `json:"actual,omitempty"`
 	Desired godrone.Placement `json:"desired,omitempty"`
+	Cutout  string            `json:"cutout,omitempty"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -125,7 +152,7 @@ func serveHttp(reqCh chan<- Request) {
 		}
 		defer conn.Close()
 		for {
-			var req Request
+			req := newRequest()
 			if err := conn.ReadJSON(&req); err != nil {
 				log.Printf("Failed to read from ws: %s", err)
 				return
@@ -139,9 +166,10 @@ func serveHttp(reqCh chan<- Request) {
 				first = false
 			}
 
-			req.Response = make(chan Response)
+			// Send the request into the control loop.
 			reqCh <- req
-			res := <-req.Response
+			res := <-req.response
+
 			if err := conn.WriteJSON(res); err != nil {
 				log.Printf("Failed to write to ws: %s", err)
 				return
@@ -152,8 +180,6 @@ func serveHttp(reqCh chan<- Request) {
 		log.Fatalf("Failed to serve http: %s", err)
 	}
 }
-
-type Client struct{}
 
 func reallyVerbose() bool { return *verbose > 1 }
 func Verbose() bool       { return *verbose > 0 }
@@ -189,4 +215,34 @@ func (m *mockMotorboard) WriteSpeeds(speeds [4]float64) error {
 	}
 	m.speeds = speeds
 	return nil
+}
+
+// This runs in it's own goroutine. It cuts the engines if pitch or roll are too far form the setpoints.
+func monitorAngles(reqCh chan<- Request) {
+	for {
+		// Ask for the current status (by sending an empty request).
+		req := newRequest()
+		reqCh <- req
+		resp := <-req.response
+
+		// If we are still flying...
+		if resp.Cutout == "" {
+			if math.Abs(resp.Actual.PRY.Pitch) > pitchLimit {
+				req.Cutout = "Pitch angle is too high"
+			}
+			if math.Abs(resp.Actual.PRY.Roll) > rollLimit {
+				req.Cutout = "Roll angle is too high"
+			}
+
+			// if we decided to cutout, send the command in
+			if req.Cutout != "" {
+				reqCh <- req
+				// ignore the response (but we have to pick it up
+				// to unblock the control loop)
+				<-req.response
+			}
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
 }

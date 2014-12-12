@@ -18,11 +18,11 @@ var dt = time.Second / 200
 func NewFirmware() (*Firmware, error) {
 	navboard, err := OpenNavboard("/dev/ttyO1")
 	if err != nil {
-		return nil, fmt.Errorf("Failed to open navboard: %s", err)
+		return nil, fmt.Errorf("Failed to open the navboard: %s", err)
 	}
 	motorboard, err := OpenMotorboard("/dev/ttyO0")
 	if err != nil {
-		return nil, fmt.Errorf("Failed to open navboard: %s", err)
+		return nil, fmt.Errorf("Failed to open the motorboard: %s", err)
 	}
 	return NewCustomFirmware(navboard, motorboard)
 }
