@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -66,9 +67,11 @@ func NewCustomFirmware(n NavdataReader, m MotorLedWriter) (*Firmware, error) {
 	}, nil
 }
 
-// Firmware provides an interface for writing custom drone firmwares. It does
-// not support concurrent access, and offers many ways for the user to shoot
+// Firmware provides an interface for writing custom drone firmwares. In general,
+// it does not support concurrent access, and offers many ways for the user to shoot
 // himself in the foot when modifying anything but the Desired state.
+//
+// The field Actual can be safely accessed concurrently; see GetActual and SetActual.
 //
 // @TODO Many interesting things could be achieved by turning some of the
 // fields below into integer types.
@@ -91,10 +94,28 @@ type Firmware struct {
 	Controller *Controller
 	// Motors holds the motor speeds applied by the Control function.
 	Motors [4]float64
-	// Actual holds the placement of the drone as estimated by the filter.
-	Actual Placement
 	// Desired holds the desired placement the controller is trying to achieve.
 	Desired Placement
+
+	// mutex for concurrent access to the things below
+	mu sync.Mutex
+
+	// Actual holds the placement of the drone as estimated by the filter. For
+	// concurrent access, use GetActual and SetActual.
+	Actual Placement
+}
+
+func (f *Firmware) GetActual() Placement {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.Actual
+}
+
+func (f *Firmware) SetActual(p Placement) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.Actual = p
+	return
 }
 
 // Observe reads navdata and uses it to update sensor and placement estimates.
@@ -105,7 +126,9 @@ func (f *Firmware) Observe() error {
 		return fmt.Errorf("Failed to read navdata: %s", err)
 	}
 	f.Sensors = f.Calibration.Convert(f.Navdata)
-	f.Filter.Update(&f.Actual, f.Sensors, dt)
+	a := f.GetActual()
+	f.Filter.Update(&a, f.Sensors, dt)
+	f.SetActual(a)
 	return nil
 }
 
@@ -115,7 +138,7 @@ func (f *Firmware) Control() error {
 	if err := f.Observe(); err != nil {
 		return err
 	}
-	f.Motors = f.Controller.Control(f.Actual, f.Desired, dt)
+	f.Motors = f.Controller.Control(f.GetActual(), f.Desired, dt)
 	if err := f.Motorboard.WriteSpeeds(f.Motors); err != nil {
 		return fmt.Errorf("Failed to write speeds: %s", err)
 	}
