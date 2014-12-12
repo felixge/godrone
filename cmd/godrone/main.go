@@ -16,8 +16,8 @@ var verbose = flag.Int("verbose", 0, "verbosity: 1=some 2=lots")
 var addr = flag.String("addr", ":80", "Address to listen on (default is \":80\")")
 var dummy = flag.Bool("dummy", false, "Dummy drone: do not open navboard/motorboard.")
 
-const pitchLimit = 30
-const rollLimit = 30
+const pitchLimit = 30 // degrees
+const rollLimit = 30  // degrees
 
 func main() {
 	flag.Parse()
@@ -89,7 +89,7 @@ func main() {
 		}
 
 		// Check for cutout
-		if !cutoutReason.none() {
+		if cutoutReason.isSet() {
 			firmware.Desired.Altitude = 0
 		}
 
@@ -214,15 +214,15 @@ func (m *mockMotorboard) WriteSpeeds(speeds [4]float64) error {
 	return nil
 }
 
+// This is read/written concurrently, so it needs a mutex.
 type reason struct {
 	reason string
 	mu     sync.Mutex
 }
 
-var cutoutReason = &reason{reason: "not calibrated"}
-
-func (r *reason) setNone()   { r.set("") }
-func (r *reason) none() bool { return r.get() == "" }
+func (r *reason) setNone()       { r.set("") }
+func (r *reason) isNotSet() bool { return !r.isSet() }
+func (r *reason) isSet() bool    { return r.reason != "" }
 
 func (r *reason) set(why string) {
 	r.mu.Lock()
@@ -241,10 +241,12 @@ func (r *reason) get() string {
 	return r.reason
 }
 
-// This runs in it's own goroutine. It cuts the engines if pitch or roll are too far form the setpoints.
+var cutoutReason = &reason{reason: "not calibrated"}
+
+// This runs in it's own goroutine. It sets the cutout gloabl if pitch or roll are too far from the setpoints.
 func monitorAngles(f *godrone.Firmware) {
 	for {
-		if cutoutReason.none() {
+		if cutoutReason.isNotSet() {
 			actual := f.GetActual()
 			if math.Abs(actual.PRY.Pitch) > pitchLimit {
 				cutoutReason.set("Pitch angle is too high")
