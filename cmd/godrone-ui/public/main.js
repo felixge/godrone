@@ -54,6 +54,11 @@ emdiv.onclick = function() {
   emdiv.style.display = "none";
 }
 
+function showEmergency(why) {
+  emdiv.style.display = "inherit";
+  document.getElementById("emwhy").innerHTML = why
+}
+
 function Conn(options) {
   var ws = new WebSocket(options.url);
   var first = true;
@@ -122,6 +127,11 @@ function Conn(options) {
         desired.altitude = data.desired.Altitude;
     }
 
+    if (data.cutout) {
+      emergency = true
+      showEmergency("Drone cutout: " + data.cutout)
+    }
+
     var latency = Date.now() - lastSend;
     var timeout = Math.max(0, 1000/options.hz-latency);
     lastSend = Date.now();
@@ -129,6 +139,9 @@ function Conn(options) {
       var msg = {};
       var newDesired = { pitch: desired.pitch, roll: desired.roll,
                          yaw: desired.yaw, altitude: desired.altitude };
+      if (isDown[KEYS.c]) {
+        msg.calibrate = true;
+      }
       if (emergency) {
         newDesired = {pitch: 0, roll: 0, yaw: 0, altitude: 0};
       } else {
@@ -162,9 +175,6 @@ function Conn(options) {
           if (newDesired.altitude < minAltitude) {
             newDesired.altitude = 0;
           }
-        }
-        if (isDown[KEYS.c]) {
-          msg.calibrate = true;
         }
       }
       if (emergency || newDesired.pitch != desired.pitch ||
@@ -209,7 +219,7 @@ window.onkeydown = function(e) {
   switch (e.keyCode) {
     case KEYS.esc:
       emergency = true;
-      emdiv.style.display = "inherit";
+      showEmergency("user requested");
       break;
     case KEYS.p:
       pause = !pause;

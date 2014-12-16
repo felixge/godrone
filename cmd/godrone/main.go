@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"log"
+	"math"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/felixge/godrone"
@@ -13,6 +15,9 @@ import (
 var verbose = flag.Int("verbose", 0, "verbosity: 1=some 2=lots")
 var addr = flag.String("addr", ":80", "Address to listen on (default is \":80\")")
 var dummy = flag.Bool("dummy", false, "Dummy drone: do not open navboard/motorboard.")
+
+const pitchLimit = 30 // degrees
+const rollLimit = 30  // degrees
 
 func main() {
 	flag.Parse()
@@ -35,6 +40,8 @@ func main() {
 	reqCh := make(chan Request)
 	go serveHttp(reqCh)
 
+	go monitorAngles(firmware)
+
 	calibrate := func() {
 		for {
 			// @TODO The LEDs don't seem to turn off when this is called again after
@@ -48,16 +55,20 @@ func main() {
 			} else {
 				log.Printf("Finished calibration")
 				firmware.Motorboard.WriteLeds(godrone.Leds(godrone.LedGreen))
+				cutoutReason.setNone()
 				break
 			}
 		}
 	}
 	calibrate()
+	log.Printf("Up, up and away!")
+
+	// This is the main control loop.
 	for {
 		select {
 		case req := <-reqCh:
 			var res Response
-			res.Actual = firmware.Actual
+			res.Actual = firmware.GetActual()
 			res.Desired = firmware.Desired
 			res.Time = time.Now()
 			if req.SetDesired != nil {
@@ -76,6 +87,12 @@ func main() {
 			}
 		default:
 		}
+
+		// Check for cutout
+		if cutoutReason.isSet() {
+			firmware.Desired.Altitude = 0
+		}
+
 		var err error
 		if firmware.Desired.Altitude > 0 {
 			err = firmware.Control()
@@ -105,6 +122,7 @@ type Response struct {
 	Time    time.Time         `json:"time"`
 	Actual  godrone.Placement `json:"actual,omitempty"`
 	Desired godrone.Placement `json:"desired,omitempty"`
+	Cutout  string            `json:"cutout,omitempty"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -140,8 +158,13 @@ func serveHttp(reqCh chan<- Request) {
 			}
 
 			req.Response = make(chan Response)
+
+			// Send the request into the control loop.
 			reqCh <- req
 			res := <-req.Response
+
+			res.Cutout = cutoutReason.get()
+
 			if err := conn.WriteJSON(res); err != nil {
 				log.Printf("Failed to write to ws: %s", err)
 				return
@@ -189,4 +212,50 @@ func (m *mockMotorboard) WriteSpeeds(speeds [4]float64) error {
 	}
 	m.speeds = speeds
 	return nil
+}
+
+// This is read/written concurrently, so it needs a mutex.
+type reason struct {
+	reason string
+	mu     sync.Mutex
+}
+
+func (r *reason) setNone()       { r.set("") }
+func (r *reason) isNotSet() bool { return !r.isSet() }
+func (r *reason) isSet() bool    { return r.reason != "" }
+
+func (r *reason) set(why string) {
+	r.mu.Lock()
+	r.reason = why
+	r.mu.Unlock()
+
+	if why == "" {
+		why = "none"
+	}
+	log.Printf("Cutout: %v", why)
+}
+
+func (r *reason) get() string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.reason
+}
+
+var cutoutReason = &reason{reason: "not calibrated"}
+
+// This runs in it's own goroutine. It sets the cutout gloabl if pitch or roll are too far from the setpoints.
+func monitorAngles(f *godrone.Firmware) {
+	for {
+		if cutoutReason.isNotSet() {
+			actual := f.GetActual()
+			if math.Abs(actual.PRY.Pitch) > pitchLimit {
+				cutoutReason.set("Pitch angle is too high")
+			}
+			if math.Abs(actual.PRY.Roll) > rollLimit {
+				cutoutReason.set("Roll angle is too high")
+			}
+		}
+
+		time.Sleep(30 * time.Millisecond)
+	}
 }

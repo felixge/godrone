@@ -75,7 +75,7 @@ func run(pkg, buildDir string) {
 	if output, err := build.CombinedOutput(); err != nil {
 		log.Printf("Compile error: %s: %s", err, output)
 		log.Print("If you need help setting up Go cross-compiling see:")
-		log.Fatal("  http://godrone.io/en/latest/contributor/install_from_source.html")
+		log.Fatal("  http://www.godrone.io/en/latest/contributor/install_from_source.html")
 	}
 	log.Printf("Establishing telnet connection")
 	telnet, err := DialTelnet(net.JoinHostPort(*addr, telnetPort))
