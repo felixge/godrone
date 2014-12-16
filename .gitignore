@@ -1,3 +1,3 @@
-godrone-ui
-godrone-util
-godrone
+cmd/godrone-ui/godrone-ui
+cmd/godrone-util/godrone-util
+cmd/godrone/godrone
