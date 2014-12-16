@@ -201,12 +201,21 @@ var KEYS = {
   a: 65,
   d: 68,
   p: 80,
+    question: 191,
 };
 var isDown = {};
 
 window.onkeydown = function(e) {
   isDown[e.keyCode] = true;
   switch (e.keyCode) {
+    case KEYS.question:
+      var helpdiv = document.getElementById("help")
+      if (helpdiv.style.display == "none") {
+	  helpdiv.style.display = "inherit";
+      } else {
+	  helpdiv.style.display = "none";
+      }
+      break;
     case KEYS.esc:
       emergency = true;
       emdiv.style.display = "inherit";
