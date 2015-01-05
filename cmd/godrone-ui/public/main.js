@@ -117,15 +117,15 @@ function Conn(options) {
           graphs[i].updateOptions({file: charts[i].data, dateWindow: [time-10000, time]});
 	}
     }
-    if (first) {
-        // on the first response, set our desired alt to the drone's current desired alt,
-        // so that we can reconnect to a hovering drone without crashing it.
-        first = false;
-        desired.pitch = 0;
-        desired.roll = 0;
-        desired.yaw = 0;
-        desired.altitude = data.desired.Altitude;
-    }
+
+    // For each response, set our desired alt to the drone's current desired alt,
+    // so that we can:
+    // - reconnect to a flying drone
+    // - monitor a drone that's doing something on it's own (like landing)
+    desired.pitch = data.desired.Pitch;
+    desired.roll = data.desired.Roll;
+    desired.yaw = data.desired.Yaw;
+    desired.altitude = data.desired.Altitude;
 
     if (data.cutout) {
       emergency = true
@@ -176,6 +176,9 @@ function Conn(options) {
             newDesired.altitude = 0;
           }
         }
+        if (isDown[KEYS.l]) {
+            msg.land = true;
+        }
       }
       if (emergency || newDesired.pitch != desired.pitch ||
           newDesired.roll != desired.roll ||
@@ -210,6 +213,7 @@ var KEYS = {
   s: 83,
   a: 65,
   d: 68,
+  l: 76,
   p: 80,
 };
 var isDown = {};
