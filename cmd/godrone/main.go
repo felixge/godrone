@@ -37,13 +37,17 @@ func main() {
 		defer firmware.Close()
 	}
 
-	// This it the channel to send requests to the main control loop.
+	// This is the channel to send requests to the main control loop.
 	// It is the only way to send and receive info the the
 	// godrone.Firmware object (which is non-concurrent).
 	reqCh := make(chan Request)
 
-	go serveHttp(reqCh)
+	// Autonomy/guard goroutines.
 	go monitorAngles(reqCh)
+	go lander(reqCh)
+
+	// The websocket input goroutine.
+	go serveHttp(reqCh)
 
 	calibrate := func() {
 		for {
@@ -64,9 +68,10 @@ func main() {
 		}
 	}
 	calibrate()
-	log.Printf("Up, up and away!")
+	log.Print("Up, up and away!")
 
 	// This is the main control loop.
+	flying := false
 	for {
 		select {
 		case req := <-reqCh:
@@ -101,6 +106,7 @@ func main() {
 		var err error
 		if firmware.Desired.Altitude > 0 {
 			err = firmware.Control()
+			flying = true
 		} else {
 			// Something subtle to note here: When the motors are running,
 			// but then desired altitude goes to zero (for instance due to
@@ -110,6 +116,10 @@ func main() {
 			// the failsafe behavior of the motorboard, which puts the motors to
 			// zero if it does not receive a new motor command soon enough.
 			err = firmware.Observe()
+			if flying {
+				log.Print("Motor cutoff.")
+				flying = false
+			}
 		}
 		if err != nil {
 			log.Printf("%s", err)
@@ -120,9 +130,9 @@ func main() {
 type Request struct {
 	SetDesired *godrone.Placement
 	Calibrate  bool
+	Land       bool
 	Cutout     string
-
-	response chan Response
+	response   chan Response
 }
 
 func newRequest() Request { return Request{response: make(chan Response)} }
@@ -166,6 +176,16 @@ func serveHttp(reqCh chan<- Request) {
 				first = false
 			}
 
+			if req.Land {
+				log.Print("Landing requested.")
+				landCh <- landStart
+			}
+
+			// Cancel landing when there is flight input.
+			if req.SetDesired != nil {
+				landCh <- landCancel
+			}
+
 			// Send the request into the control loop.
 			reqCh <- req
 			res := <-req.response
@@ -205,19 +225,21 @@ type mockMotorboard struct {
 }
 
 func (m *mockMotorboard) WriteLeds(leds [4]godrone.LedColor) error {
-	log.Print("Mock WriteLeds: ", leds)
+	if reallyVerbose() {
+		log.Print("Mock WriteLeds: ", leds)
+	}
 	return nil
 }
 
 func (m *mockMotorboard) WriteSpeeds(speeds [4]float64) error {
-	if m.speeds != speeds {
+	if reallyVerbose() && m.speeds != speeds {
 		log.Print("Mock WriteSpeeds: ", speeds)
 	}
 	m.speeds = speeds
 	return nil
 }
 
-// This runs in it's own goroutine. It cuts the engines if pitch or roll are too far form the setpoints.
+// This runs in its own goroutine. It cuts the motors if pitch or roll are over the limit.
 func monitorAngles(reqCh chan<- Request) {
 	for {
 		// Ask for the current status (by sending an empty request).
@@ -244,5 +266,81 @@ func monitorAngles(reqCh chan<- Request) {
 		}
 
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// A landCmd is a command sent into the lander goroutine via the landCh.
+type landCmd int
+
+const (
+	landStart landCmd = iota
+	landCancel
+)
+
+// Buffered because nothing good would come from blocking on sending
+// and maybe some bad.
+var landCh = make(chan landCmd, 10)
+
+// Descent reate in meters/sec.
+const descentRate = 0.5 // m/s
+// Descend until here, then cut motors.
+const descendUntil = 0.3 // m
+
+// How often landing adjustments are issued (number per second).
+const landingHz = 5
+
+var landingSleep = time.Second / landingHz
+
+// A goroutine that commands a controlled landing, once requested by a send on landStart.
+// It can be canceled by sending a signal to landCancel.
+func lander(reqCh chan<- Request) {
+	for {
+		// waiting for start
+		cmd := landCancel
+		for cmd != landStart {
+			cmd = <-landCh
+		}
+
+		// Bring desired altitude down to .3 at .5 m/s. At .3 cut motors,
+		// to drop to the ground.
+		for cmd == landStart {
+			// Ask for the current status (by sending an empty request).
+			req := newRequest()
+			reqCh <- req
+			resp := <-req.response
+
+			// Descend a bit
+			newAlt := resp.Desired.Altitude
+			if newAlt < 2*descendUntil {
+				// slow down near the cutoff
+				newAlt -= descentRate / 3 / landingHz
+			} else {
+				newAlt -= descentRate / landingHz
+			}
+
+			// Cutoff motors?
+			if newAlt < descendUntil {
+				newAlt = 0
+				cmd = landCancel
+			}
+
+			// Update the req and send it in to the control loop.
+			req.SetDesired = &godrone.Placement{}
+			*req.SetDesired = resp.Desired
+			req.SetDesired.Altitude = newAlt
+			reqCh <- req
+			resp = <-req.response
+			time.Sleep(landingSleep)
+
+			// check for cancel (or a dup start)
+			select {
+			case cmd = <-landCh:
+				// Got a cmd.
+				// It is either a duplicate start, so we keep going
+				// or a cancel, so the loop ends, and we got to the top.
+			default:
+				// Do not block on chan read.
+			}
+		}
 	}
 }
