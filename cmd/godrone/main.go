@@ -2,9 +2,12 @@ package main
 
 import (
 	"flag"
+	"image"
+	"image/jpeg"
 	"log"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/felixge/godrone"
@@ -48,6 +51,9 @@ func main() {
 
 	// The websocket input goroutine.
 	go serveHttp(reqCh)
+
+	// The video fetcher
+	go fetchVideo()
 
 	calibrate := func() {
 		for {
@@ -152,8 +158,26 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+func serveCamera(w http.ResponseWriter, r *http.Request) {
+	var im image.Image
+	fwd, _ := getImages()
+	if r.URL.Path == "/camera/front" {
+		im = fwd
+	}
+	if im == nil {
+		http.Error(w, "Unknown camera.", http.StatusNotFound)
+		return
+	}
+	jpeg.Encode(w, im, &jpeg.Options{Quality: 20})
+}
+
 func serveHttp(reqCh chan<- Request) {
 	err := http.ListenAndServe(*addr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/camera/") {
+			serveCamera(w, r)
+			return
+		}
+
 		first := true
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
