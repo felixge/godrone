@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"sync"
 	"time"
+
+	"github.com/nfnt/resize"
 )
 
 const framesPerSec = 1
@@ -40,38 +42,33 @@ func fetchVideo() {
 		return
 	}
 
-	var fwd image.Image
 	for {
-		// lazy initialization; first two times through this will be run,
-		// and after that we swap the two in and out.
-		if fwd == nil {
-			fwd = image.NewYCbCr(image.Rect(0, 0, 1280, 720), image.YCbCrSubsampleRatio422)
-		}
-		fetchForward(fwd)
-
-		// setImages returns the previous image so that we can reuse it
-		// for the next time around.
-		fwd, _ = setImages(fwd, nil)
+		fwd := fetchForward()
+		setImages(fwd, nil)
 
 		time.Sleep(1 / framesPerSec * time.Second)
 	}
 }
 
-func fetchForward(im image.Image) {
+func fetchForward() image.Image {
 	cmd := exec.Command("yavta", "-c1", "-F/tmp/frame", "-f", "UYVY", "-s", "1280x720", "/dev/video1")
 	err := cmd.Run()
 	if err != nil {
 		log.Print("front image capture error: ", err)
-		return
+		return nil
 	}
 	frame, err := ioutil.ReadFile("/tmp/frame")
 	if err != nil {
 		log.Print("front image read error: ", err)
-		return
+		return nil
 	}
 	os.Remove("/tmp/frame")
+
+	im := image.NewYCbCr(image.Rect(0, 0, 1280, 720), image.YCbCrSubsampleRatio422)
 	frameToImage(frame, im)
-	return
+	small := resize.Resize(300, 0, im, resize.NearestNeighbor)
+
+	return small
 }
 
 // frameToImage copies frame into image i.
@@ -81,8 +78,6 @@ func frameToImage(frame []byte, i image.Image) {
 	// U = Cb, V = Cr
 
 	im := i.(*image.YCbCr)
-	log.Print("frame:", len(frame))
-	log.Print("im.Cb:", len(im.Cb))
 	y, br := 0, 0
 	for i := 0; i < len(frame); i += 4 {
 		im.Cb[br] = frame[i+0]

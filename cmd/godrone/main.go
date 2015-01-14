@@ -160,6 +160,7 @@ var upgrader = websocket.Upgrader{
 
 func serveCamera(w http.ResponseWriter, r *http.Request) {
 	var im image.Image
+	log.Print("serveCamera: start")
 	fwd, _ := getImages()
 	if r.URL.Path == "/camera/front" {
 		im = fwd
@@ -169,10 +170,15 @@ func serveCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jpeg.Encode(w, im, &jpeg.Options{Quality: 20})
+	log.Print("serveCamera: done")
 }
 
 func serveHttp(reqCh chan<- Request) {
 	err := http.ListenAndServe(*addr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/favicon.ico" {
+			http.Error(w, "no", http.StatusNotFound)
+			return
+		}
 		if strings.HasPrefix(r.URL.Path, "/camera/") {
 			serveCamera(w, r)
 			return
@@ -181,7 +187,7 @@ func serveHttp(reqCh chan<- Request) {
 		first := true
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			log.Printf("Failed to upgrade ws: %s", err)
+			log.Printf("Failed to upgrade ws: %s (url: %v)", err, r.URL)
 			return
 		}
 		defer conn.Close()
