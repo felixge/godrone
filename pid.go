@@ -13,7 +13,7 @@ type PID struct {
 	integral    float64
 }
 
-// UpdateDuration updates the controller with the given value and duration since
+// Update updates the controller with the given value and duration since
 // the last update. It returns the new output.
 func (p *PID) Update(actual, desired float64, dt time.Duration) float64 {
 	var (
