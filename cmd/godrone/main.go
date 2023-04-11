@@ -2,13 +2,12 @@ package main
 
 import (
 	"flag"
+	"github.com/gorilla/websocket"
+	"godrone"
 	"log"
 	"math"
 	"net/http"
 	"time"
-
-	"github.com/felixge/godrone"
-	"github.com/gorilla/websocket"
 )
 
 var verbose = flag.Int("verbose", 0, "verbosity: 1=some 2=lots")
