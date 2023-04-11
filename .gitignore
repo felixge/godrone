@@ -1,3 +1,5 @@
 cmd/godrone-ui/godrone-ui
 cmd/godrone-util/godrone-util
 cmd/godrone/godrone
+.idea/
+*.exe
