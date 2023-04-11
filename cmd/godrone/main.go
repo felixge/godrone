@@ -76,6 +76,11 @@ func main() {
 		select {
 		case req := <-reqCh:
 			var res Response
+			if req.Include != nil {
+				if req.Include.Calibration {
+					res.Calibration = &firmware.Calibration
+				}
+			}
 			res.Cutout = cutoutReason
 			res.Actual = firmware.Actual
 			res.Desired = firmware.Desired
@@ -94,7 +99,11 @@ func main() {
 				firmware.Desired.Altitude = 0
 			}
 			if req.Calibrate {
-				calibrate()
+				if req.CustomCalibrationData != nil {
+					firmware.Calibration = *req.CustomCalibrationData
+				} else {
+					calibrate()
+				}
 			}
 			req.response <- res
 			if reallyVerbose() {
@@ -127,21 +136,28 @@ func main() {
 	}
 }
 
+type IncludeData struct {
+	Calibration bool
+}
+
 type Request struct {
-	SetDesired *godrone.Placement
-	Calibrate  bool
-	Land       bool
-	Cutout     string
-	response   chan Response
+	SetDesired            *godrone.Placement
+	Include               *IncludeData
+	Calibrate             bool
+	CustomCalibrationData *godrone.Calibration
+	Land                  bool
+	Cutout                string
+	response              chan Response
 }
 
 func newRequest() Request { return Request{response: make(chan Response)} }
 
 type Response struct {
-	Time    time.Time         `json:"time"`
-	Actual  godrone.Placement `json:"actual,omitempty"`
-	Desired godrone.Placement `json:"desired,omitempty"`
-	Cutout  string            `json:"cutout,omitempty"`
+	Time        time.Time            `json:"time"`
+	Actual      godrone.Placement    `json:"actual,omitempty"`
+	Desired     godrone.Placement    `json:"desired,omitempty"`
+	Calibration *godrone.Calibration `json:"calibration,omitempty"`
+	Cutout      string               `json:"cutout,omitempty"`
 }
 
 var upgrader = websocket.Upgrader{
